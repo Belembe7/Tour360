@@ -4,8 +4,8 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 
 const SLIDES = [
-  { src: "/images/hero-rotate-1.png", alt: "Vista aerea no aviao ao por do sol" },
-  { src: "/images/hero-rotate-2.png", alt: "Vista aerea de aguas tropicais" },
+  { src: "/images/hero-top-1.jpg", alt: "Vista aerea de ilha tropical e oceano azul" },
+  { src: "/images/hero-top-2.jpg", alt: "Costa tropical com palmeiras e mar cristalino" },
   { src: "/images/hero-rotate-3.png", alt: "Ondas no mar em vista aerea" },
 ] as const;
 

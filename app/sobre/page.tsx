@@ -1,5 +1,7 @@
 import { AboutHeroRotating } from "@/components/layout/about-hero-rotating";
 import { PageBack } from "@/components/layout/page-back";
+import { CountUp } from "@/components/ui/count-up";
+import { ScrollReveal } from "@/components/ui/scroll-reveal";
 
 export default function SobrePage() {
   return (
@@ -22,7 +24,7 @@ export default function SobrePage() {
 
       <div className="mx-auto w-full max-w-6xl px-4 py-12 md:py-14">
         {/* About Us */}
-        <section>
+        <ScrollReveal as="section">
           <div className="text-center">
             <h2 className="text-3xl font-extrabold text-white md:text-4xl">Quem somos</h2>
             <p className="mx-auto mt-3 max-w-2xl text-sm text-white/80 md:text-base">
@@ -31,7 +33,7 @@ export default function SobrePage() {
           </div>
 
           <div className="mt-10 grid gap-8 md:grid-cols-2 md:gap-10">
-            <div className="rounded-2xl bg-white/5 p-6 ring-1 ring-white/10 backdrop-blur-sm">
+            <div className="ui-glass-surface rounded-2xl p-6 ring-1 ring-white/10 backdrop-blur-sm">
               <p className="text-sm leading-relaxed text-white/85">
                 A TOUR 360 apoia particulares e empresas com solucoes completas: pacotes
                 nacionais e internacionais, aluguer de viaturas para turismo/transfer e
@@ -51,7 +53,7 @@ export default function SobrePage() {
               </div>
             </div>
 
-            <div className="rounded-2xl bg-white/5 p-2 ring-1 ring-white/10 backdrop-blur-sm">
+            <div className="ui-glass-surface rounded-2xl p-2 ring-1 ring-white/10 backdrop-blur-sm">
               <div className="divide-y divide-white/10">
                 <details className="group p-5" open>
                   <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-semibold text-white">
@@ -86,10 +88,13 @@ export default function SobrePage() {
               </div>
             </div>
           </div>
-        </section>
+        </ScrollReveal>
 
         {/* Stats band */}
-        <section className="mt-12 overflow-hidden rounded-3xl bg-gradient-to-r from-[color:var(--brand-700)]/55 via-cyan-400/25 to-[color:var(--brand-900)]/55 ring-1 ring-white/10">
+        <ScrollReveal
+          as="section"
+          className="mt-12 overflow-hidden rounded-3xl bg-gradient-to-r from-[color:var(--brand-700)]/55 via-cyan-400/25 to-[color:var(--brand-900)]/55 ring-1 ring-white/10"
+        >
           <div className="grid gap-4 p-6 text-white md:grid-cols-4 md:gap-6 md:p-8">
             {[
               { value: "24/7", label: "Suporte e acompanhamento" },
@@ -97,16 +102,25 @@ export default function SobrePage() {
               { value: "100+", label: "Clientes atendidos" },
               { value: "100%", label: "Foco em seguranca" },
             ].map((s) => (
-              <div key={s.label} className="rounded-2xl bg-white/10 p-5 text-center backdrop-blur-sm ring-1 ring-white/10">
-                <p className="text-3xl font-extrabold">{s.value}</p>
+              <div key={s.label} className="ui-grid-card p-5 text-center backdrop-blur-sm ring-1 ring-white/10">
+                <p className="text-3xl font-extrabold">
+                  {s.value === "24/7" || s.value === "100%" ? (
+                    s.value
+                  ) : (
+                    <>
+                      <CountUp to={Number.parseInt(s.value, 10)} />
+                      +
+                    </>
+                  )}
+                </p>
                 <p className="mt-2 text-sm text-white/85">{s.label}</p>
               </div>
             ))}
           </div>
-        </section>
+        </ScrollReveal>
 
         {/* Why Us */}
-        <section className="mt-12">
+        <ScrollReveal as="section" className="mt-12">
           <div className="text-center">
             <h2 className="text-3xl font-extrabold text-white md:text-4xl">Por que a TOUR 360?</h2>
             <p className="mx-auto mt-3 max-w-2xl text-sm text-white/80 md:text-base">
@@ -119,13 +133,13 @@ export default function SobrePage() {
               {
                 title: "Planeamento inteligente",
                 desc: "Recomendacoes, rotas e opcoes ajustadas ao seu perfil e orcamento.",
-                img: "/images/planeamento-inteligente.png",
+                img: "/images/about-hq-1.jpg",
                 floatClass: "floating-card floating-card-1",
               },
               {
                 title: "Conforto e seguranca",
                 desc: "Frota e parceiros selecionados para garantir uma viagem tranquila.",
-                img: "/images/conforto-e-seguranca.png",
+                img: "/images/about-hq-2.jpg",
                 floatClass: "floating-card floating-card-2",
               },
               {
@@ -159,10 +173,10 @@ export default function SobrePage() {
               </article>
             ))}
           </div>
-        </section>
+        </ScrollReveal>
 
         {/* Our Services */}
-        <section className="mt-12">
+        <ScrollReveal as="section" className="mt-12">
           <div className="text-center">
             <h2 className="text-3xl font-extrabold text-white md:text-4xl">Os nossos servicos</h2>
             <p className="mx-auto mt-3 max-w-2xl text-sm text-white/80 md:text-base">
@@ -197,13 +211,13 @@ export default function SobrePage() {
                 desc: "Propostas claras, transparentes e adaptadas ao seu objetivo.",
               },
             ].map((s) => (
-              <div key={s.title} className="rounded-2xl bg-white/5 p-6 ring-1 ring-white/10 backdrop-blur-sm">
+              <div key={s.title} className="ui-grid-card p-6 ring-1 ring-white/10 backdrop-blur-sm">
                 <p className="text-base font-extrabold text-white">{s.title}</p>
                 <p className="mt-2 text-sm text-white/80">{s.desc}</p>
               </div>
             ))}
           </div>
-        </section>
+        </ScrollReveal>
       </div>
     </main>
   );

@@ -24,35 +24,43 @@ export function PackageCard({ item }: { item: Package }) {
     (item.type === "nacional" ? "/images/package-nacional-1.png" : "/images/maputo.jpg");
 
   return (
-    <article className="group relative overflow-hidden rounded-xl border border-white/35 bg-transparent shadow-sm transition-transform duration-300 ease-out hover:scale-[1.08] hover:shadow-xl active:scale-[1.02]">
-      <div
-        className="pointer-events-none absolute -inset-1 -z-10 rounded-[1rem] bg-gradient-to-r from-cyan-300/45 via-sky-300/35 to-blue-300/45 opacity-0 blur-md transition-opacity duration-300 group-hover:opacity-100"
-        aria-hidden
-      />
-      <Image src={cover} alt={item.name} fill className="object-cover" />
-      <div className="absolute inset-0 bg-gradient-to-b from-black/35 via-black/45 to-black/75" />
+    <article className="group ui-surface-lift flex h-full flex-col overflow-hidden rounded-2xl border border-zinc-200/90 bg-white shadow-sm ring-1 ring-zinc-900/[0.03]">
+      <div className="relative aspect-[16/10] w-full overflow-hidden bg-zinc-100">
+        <Image
+          src={cover}
+          alt={item.name}
+          fill
+          className="object-cover transition duration-500 group-hover:scale-[1.04]"
+          sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 33vw"
+        />
+        <span className="absolute left-3 top-3 inline-flex rounded-md bg-[color:var(--brand-900)] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white shadow-sm">
+          {item.type === "nacional" ? "Nacional" : "Internacional"}
+        </span>
+      </div>
 
-      <div className="relative flex min-h-96 flex-col justify-end p-5">
-        <div className="mb-2">
-          <span className="inline-flex rounded-full bg-[color:var(--brand-700)] px-3 py-1 text-xs font-extrabold tracking-wide text-white shadow-sm">
+      <div className="flex flex-1 flex-col p-4">
+        <div className="mb-2 flex flex-wrap items-center gap-2">
+          <span className="inline-flex rounded-full bg-[color:var(--brand-50)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-[color:var(--brand-900)] ring-1 ring-[color:var(--brand-500)]/20">
             {categoryLabel(item.category)}
           </span>
+          <span className="text-[11px] font-medium text-zinc-500">TOUR 360</span>
         </div>
 
-        <h3 className="text-2xl font-extrabold leading-tight tracking-tight text-white [text-shadow:0_2px_10px_rgba(0,0,0,0.65)]">
-          {item.name}
-        </h3>
-        <p className="mt-2 text-sm font-medium text-zinc-100 [text-shadow:0_1px_8px_rgba(0,0,0,0.7)]">
+        <h3 className="text-lg font-bold leading-tight text-[color:var(--brand-900)]">{item.name}</h3>
+        <p className="mt-2 line-clamp-2 min-h-[2.5rem] text-sm text-zinc-600">
           {item.description ?? "Pacote turistico com servico TOUR 360."}
         </p>
-        <p className="mt-4 text-sm font-extrabold tracking-wide text-cyan-200 [text-shadow:0_1px_8px_rgba(0,0,0,0.7)]">
-          Desde {formatCurrency(item.price_min)}
-        </p>
+
+        <div className="mt-4 border-t border-zinc-100 pt-3">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Preco inicial</p>
+          <p className="mt-1 text-xl font-bold text-[color:var(--brand-900)]">{formatCurrency(item.price_min)}</p>
+        </div>
+
         <Link
           href={`/pacotes/${item.slug}`}
-          className="mt-4 inline-flex w-fit rounded-md border border-white/35 bg-black/45 px-3 py-2 text-sm font-semibold text-white backdrop-blur-sm transition hover:bg-black/60"
+          className="ui-btn mt-4 inline-flex w-full items-center justify-center rounded-lg bg-[color:var(--brand-700)] px-3 py-2.5 text-sm font-semibold text-white hover:bg-[color:var(--brand-900)]"
         >
-          Reservar
+          Ver pacote
         </Link>
       </div>
     </article>

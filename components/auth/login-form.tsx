@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
@@ -7,27 +8,21 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createClient } from "@/lib/supabase/client";
 import { loginSchema, type LoginSchema } from "@/lib/validations";
-import { AuthCardShell, GoogleIcon } from "@/components/auth/auth-card-shell";
 
 type LoginFormProps = {
   variant?: "client" | "staff";
   defaultNext?: string;
 };
 
-const inputFilled =
-  "ui-field w-full rounded-2xl border-0 bg-zinc-100 px-4 py-3.5 text-sm text-zinc-900 placeholder:text-zinc-400 outline-none " +
-  "focus:bg-white focus:ring-2 focus:ring-[color:var(--brand-500)]/40";
-
-const inputOutlined =
-  "ui-field w-full rounded-2xl border border-zinc-200 bg-white px-4 py-3.5 text-sm text-zinc-900 placeholder:text-zinc-400 outline-none " +
-  "focus:border-[color:var(--brand-500)] focus:ring-2 focus:ring-[color:var(--brand-500)]/25";
+const inputBase =
+  "w-full rounded-lg border border-zinc-200 bg-white px-3 py-2.5 text-sm text-zinc-900 placeholder:text-zinc-400 outline-none transition " +
+  "focus:border-[color:var(--brand-500)] focus:ring-2 focus:ring-[color:var(--brand-500)]/20";
 
 export function LoginForm({ variant = "client", defaultNext = "/perfil" }: LoginFormProps) {
   const params = useSearchParams();
   const [serverError, setServerError] = useState<string | null>(null);
   const [infoMessage, setInfoMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [oauthLoading, setOauthLoading] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -113,25 +108,6 @@ export function LoginForm({ variant = "client", defaultNext = "/perfil" }: Login
     window.location.assign(dest);
   }
 
-  async function handleGoogleLogin() {
-    setServerError(null);
-    setInfoMessage(null);
-    setOauthLoading(true);
-    const supabase = createClient();
-    const redirectTo = `${getBaseUrl()}/auth/callback?next=${encodeURIComponent(nextPath)}`;
-
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo },
-    });
-
-    setOauthLoading(false);
-
-    if (error) {
-      setServerError("Nao foi possivel iniciar o login com Google.");
-    }
-  }
-
   async function handleResendConfirmation() {
     const email = (watch("email") || pendingEmail).trim();
     if (!email) return;
@@ -192,51 +168,29 @@ export function LoginForm({ variant = "client", defaultNext = "/perfil" }: Login
   }
 
   const subtitle =
-    variant === "staff" ? (
-      <>
-        <p>Acesso reservado a funcionarios autorizados.</p>
-        <p className="mt-3 rounded-2xl bg-[color:var(--brand-50)] px-3 py-2.5 text-left text-[11px] leading-relaxed text-[color:var(--brand-900)] ring-1 ring-[color:var(--brand-500)]/20">
-          A conta tem de existir no Supabase (criada em <strong>Admin → Caixa</strong>). Se ainda nao clicou em{" "}
-          <strong>Garantir caixa1, caixa2 e caixa3</strong>, o login com caixa1@gmail.com / 123456 falha.
-        </p>
-      </>
-    ) : (
-      <p>Sentimos a sua falta. Entre com o seu email e senha.</p>
-    );
+    variant === "staff"
+      ? "Acesso reservado a funcionarios autorizados."
+      : "Bem-vindo de volta. Entre com o seu email e senha.";
 
   return (
-    <AuthCardShell
-      title={variant === "staff" ? "Atendimento" : "Entrar"}
-      subtitle={subtitle}
-      bottomSlot={
-        variant === "client" ? (
-          <>
-            <p className="text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-sky-200/95">
-              Ou entrar com
-            </p>
-            <button
-              type="button"
-              onClick={handleGoogleLogin}
-              disabled={loading || oauthLoading}
-              className="ui-btn mt-4 flex w-full items-center justify-center gap-3 rounded-full border border-white/30 bg-white/10 px-5 py-3.5 text-sm font-semibold text-white shadow-inner shadow-black/10 backdrop-blur-sm hover:bg-white/15 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              <GoogleIcon className="h-5 w-5 shrink-0" />
-              {oauthLoading ? "A redirecionar..." : "Continuar com Google"}
-            </button>
-          </>
-        ) : (
-          <p className="text-center text-xs leading-relaxed text-sky-200/90">
-            Contas de atendimento nao se criam aqui — sao registadas pelo administrador.
-          </p>
-        )
-      }
-    >
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+    <div className="login-floating group relative w-full max-w-[360px] rounded-2xl border border-white/70 bg-gradient-to-b from-white to-zinc-50/95 p-4 backdrop-blur-sm transition duration-300 hover:-translate-y-0.5 md:p-5">
+      <div
+        className="pointer-events-none absolute inset-0 rounded-2xl bg-[radial-gradient(80%_60%_at_0%_0%,rgba(78,168,222,0.14),transparent_70%)] opacity-80"
+        aria-hidden
+      />
+      <div className="relative mb-4 text-center">
+        <div className="flex justify-center">
+          <Image src="/images/logo-v2.png" alt="TOUR 360" width={88} height={88} className="h-20 w-20 object-contain" />
+        </div>
+        <p className="mt-2 text-xs text-zinc-500">{subtitle}</p>
+      </div>
+
+      <form onSubmit={handleSubmit(onSubmit)} className="relative space-y-3.5">
         <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-[color:var(--brand-900)]">Email</label>
+          <label className="text-[11px] font-semibold text-zinc-700">Email</label>
           <input
             type="email"
-            className={inputFilled}
+            className={inputBase}
             placeholder="seu@email.com"
             autoComplete="email"
             {...register("email")}
@@ -245,10 +199,10 @@ export function LoginForm({ variant = "client", defaultNext = "/perfil" }: Login
         </div>
 
         <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-[color:var(--brand-900)]">Senha</label>
+          <label className="text-[11px] font-semibold text-zinc-700">Senha</label>
           <input
             type={showPassword ? "text" : "password"}
-            className={inputOutlined}
+            className={inputBase}
             placeholder="••••••••"
             autoComplete="current-password"
             {...register("password")}
@@ -256,7 +210,7 @@ export function LoginForm({ variant = "client", defaultNext = "/perfil" }: Login
           <button
             type="button"
             onClick={() => setShowPassword((prev) => !prev)}
-            className="text-xs font-medium text-[color:var(--brand-700)] hover:underline"
+            className="text-[11px] font-medium text-zinc-600 hover:underline"
           >
             {showPassword ? "Ocultar senha" : "Ver senha"}
           </button>
@@ -264,10 +218,10 @@ export function LoginForm({ variant = "client", defaultNext = "/perfil" }: Login
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
-          <label className="inline-flex cursor-pointer items-center gap-2 text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
+          <label className="inline-flex cursor-pointer items-center gap-2 text-[11px] text-zinc-500">
             <input
               type="checkbox"
-              className="h-4 w-4 rounded border-zinc-300 text-[color:var(--brand-700)] focus:ring-[color:var(--brand-500)]"
+              className="h-4 w-4 rounded border-zinc-300 text-[color:var(--brand-700)]"
             />
             Lembrar-me
           </label>
@@ -275,7 +229,7 @@ export function LoginForm({ variant = "client", defaultNext = "/perfil" }: Login
             type="button"
             onClick={handleForgotPassword}
             disabled={resetLoading}
-            className="text-xs font-semibold text-[color:var(--brand-700)] hover:underline disabled:opacity-70"
+            className="text-[11px] font-semibold text-[color:var(--brand-700)] hover:underline disabled:opacity-70"
           >
             {resetLoading ? "A enviar..." : "Esqueceu a senha?"}
           </button>
@@ -283,7 +237,7 @@ export function LoginForm({ variant = "client", defaultNext = "/perfil" }: Login
 
         {serverError && <p className="text-sm text-red-600">{serverError}</p>}
         {variant === "staff" && serverError?.toLowerCase().includes("invalidos") ? (
-          <p className="rounded-2xl bg-zinc-50 px-3 py-2 text-left text-xs leading-relaxed text-zinc-600 ring-1 ring-zinc-200">
+          <p className="rounded-lg bg-zinc-50 px-3 py-2 text-left text-[11px] leading-relaxed text-zinc-600 ring-1 ring-zinc-200">
             Se ainda nao criou as contas de caixa: inicie sessao como <strong>admin</strong>, abra{" "}
             <strong>Admin → Caixa</strong>, confirme <code className="rounded bg-white px-1">SUPABASE_SERVICE_ROLE_KEY</code> no
             servidor e clique em <strong>Garantir caixa1, caixa2 e caixa3</strong>.
@@ -310,22 +264,22 @@ export function LoginForm({ variant = "client", defaultNext = "/perfil" }: Login
         ) : null}
 
         <button
-          disabled={loading || oauthLoading}
+          disabled={loading}
           type="submit"
-          className="ui-btn mt-2 w-full rounded-full bg-[color:var(--brand-700)] px-4 py-3.5 text-sm font-semibold text-white shadow-lg shadow-[color:var(--brand-900)]/25 hover:bg-[color:var(--brand-900)] disabled:cursor-not-allowed disabled:opacity-70"
+          className="mt-1 w-full rounded-lg bg-[color:var(--brand-700)] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[color:var(--brand-900)] disabled:cursor-not-allowed disabled:opacity-70"
         >
           {loading ? "A entrar..." : "Entrar"}
         </button>
 
         {variant === "client" ? (
           <>
-            <p className="pt-2 text-center text-sm text-zinc-600">
+            <p className="pt-1 text-center text-xs text-zinc-600">
               Nao tem conta?{" "}
               <Link href="/register" className="font-bold text-[color:var(--brand-700)] hover:underline">
                 Criar conta
               </Link>
             </p>
-            <p className="text-center text-xs text-zinc-500">
+            <p className="text-center text-[11px] text-zinc-500">
               Funcionario de caixa?{" "}
               <Link href="/login/atendimento" className="font-semibold text-[color:var(--brand-700)] hover:underline">
                 Entrar em atendimento
@@ -334,12 +288,18 @@ export function LoginForm({ variant = "client", defaultNext = "/perfil" }: Login
           </>
         ) : null}
 
-        <p className="text-center text-[11px] text-zinc-400">
+        <p className="text-center text-[10px] text-zinc-400">
           <Link href="/" className="hover:text-[color:var(--brand-700)] hover:underline">
             Voltar ao site
           </Link>
         </p>
       </form>
-    </AuthCardShell>
+      {variant === "staff" ? (
+        <p className="mt-3 rounded-lg bg-[color:var(--brand-50)] px-3 py-2 text-left text-[10px] leading-relaxed text-[color:var(--brand-900)] ring-1 ring-[color:var(--brand-500)]/20">
+          A conta tem de existir no Supabase (criada em <strong>Admin → Caixa</strong>). Se ainda nao clicou em{" "}
+          <strong>Garantir caixa1, caixa2 e caixa3</strong>, o login com caixa1@gmail.com / 123456 falha.
+        </p>
+      ) : null}
+    </div>
   );
 }

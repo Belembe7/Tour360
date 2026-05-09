@@ -14,11 +14,13 @@ const FADE_MS = 550;
 export function HeroRotatingHeadline() {
   const [index, setIndex] = useState(0);
   const [phase, setPhase] = useState<"in" | "out">("in");
-  const [reduceMotion, setReduceMotion] = useState(false);
+  const [reduceMotion, setReduceMotion] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  });
 
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setReduceMotion(mq.matches);
     const onChange = () => setReduceMotion(mq.matches);
     mq.addEventListener("change", onChange);
     return () => mq.removeEventListener("change", onChange);

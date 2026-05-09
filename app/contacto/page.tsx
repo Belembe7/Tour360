@@ -1,11 +1,12 @@
 import { PageBack } from "@/components/layout/page-back";
+import { ScrollReveal } from "@/components/ui/scroll-reveal";
 
 export default function ContactoPage() {
   return (
     <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-10">
       <PageBack href="/" label="Voltar ao inicio" variant="inverted" className="mb-6" />
       <section className="grid items-center gap-8 md:grid-cols-[1.05fr_1fr] md:gap-12">
-        <div className="md:px-2">
+        <ScrollReveal as="div" className="md:px-2">
           <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/75">
             Estamos aqui para ajudar
           </p>
@@ -58,9 +59,13 @@ export default function ContactoPage() {
               </div>
             </div>
           </div>
-        </div>
+        </ScrollReveal>
 
-        <form className="w-full max-w-xl rounded-2xl border border-white/25 bg-white/10 p-5 backdrop-blur-md shadow-[0_12px_30px_rgba(0,0,0,0.2)] md:p-6">
+        <ScrollReveal
+          as="form"
+          delayClass="ui-observe-delay-1"
+          className="ui-glass-surface w-full max-w-xl rounded-2xl border border-white/25 p-5 backdrop-blur-md shadow-[0_12px_30px_rgba(0,0,0,0.2)] md:p-6"
+        >
             <div className="space-y-3">
               <label className="block text-xs font-bold uppercase tracking-wide text-white/95" htmlFor="nome">
                 Nome
@@ -69,7 +74,7 @@ export default function ContactoPage() {
                 id="nome"
                 type="text"
                 placeholder="Digite o seu nome"
-                className="w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-sm text-zinc-800 placeholder:text-zinc-400 focus:border-[color:var(--brand-700)] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[color:var(--brand-500)]/25"
+                className="ui-field w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-sm text-zinc-800 placeholder:text-zinc-400 focus:border-[color:var(--brand-700)] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[color:var(--brand-500)]/25"
               />
 
               <label className="block text-xs font-bold uppercase tracking-wide text-white/95" htmlFor="email">
@@ -79,7 +84,7 @@ export default function ContactoPage() {
                 id="email"
                 type="email"
                 placeholder="Digite o seu email"
-                className="w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-sm text-zinc-800 placeholder:text-zinc-400 focus:border-[color:var(--brand-700)] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[color:var(--brand-500)]/25"
+                className="ui-field w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-sm text-zinc-800 placeholder:text-zinc-400 focus:border-[color:var(--brand-700)] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[color:var(--brand-500)]/25"
               />
 
               <label className="block text-xs font-bold uppercase tracking-wide text-white/95" htmlFor="servico">
@@ -87,7 +92,7 @@ export default function ContactoPage() {
               </label>
               <select
                 id="servico"
-                className="w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-sm text-zinc-700 focus:border-[color:var(--brand-700)] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[color:var(--brand-500)]/25"
+                className="ui-field w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-sm text-zinc-700 focus:border-[color:var(--brand-700)] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[color:var(--brand-500)]/25"
                 defaultValue=""
               >
                 <option value="" disabled>
@@ -106,20 +111,20 @@ export default function ContactoPage() {
                 id="mensagem"
                 rows={4}
                 placeholder="Escreva a sua mensagem"
-                className="w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-sm text-zinc-800 placeholder:text-zinc-400 focus:border-[color:var(--brand-700)] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[color:var(--brand-500)]/25"
+                className="ui-field w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-sm text-zinc-800 placeholder:text-zinc-400 focus:border-[color:var(--brand-700)] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[color:var(--brand-500)]/25"
               />
             </div>
 
             <button
               type="button"
-              className="mt-5 inline-flex items-center gap-2 rounded-full bg-[color:var(--brand-700)] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[color:var(--brand-900)]"
+              className="ui-btn mt-5 inline-flex items-center gap-2 rounded-full bg-[color:var(--brand-700)] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[color:var(--brand-900)]"
             >
               <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/20">
                 →
               </span>
               Enviar mensagem
             </button>
-        </form>
+        </ScrollReveal>
       </section>
     </main>
   );

@@ -11,6 +11,7 @@ import { VehicleHowItWorksAside } from "@/components/viaturas/vehicle-how-it-wor
 import { HelpCta } from "@/components/layout/help-cta";
 import { TravelPlannerCard } from "@/components/layout/travel-planner-card";
 import { DestinationCarousel } from "@/components/layout/destination-carousel";
+import { ScrollReveal } from "@/components/ui/scroll-reveal";
 import { createClient } from "@/lib/supabase/server";
 import type { Package, Vehicle } from "@/types";
 
@@ -66,13 +67,13 @@ export default async function Home() {
             <div className="mt-7 flex flex-wrap gap-3">
               <Link
                 href="/pacotes"
-                className="rounded-md bg-white px-5 py-2.5 text-sm font-semibold text-[color:var(--brand-900)] transition hover:bg-white/90"
+                className="ui-btn rounded-md bg-white px-5 py-2.5 text-sm font-semibold text-[color:var(--brand-900)] hover:bg-white/90"
               >
                 Explorar pacotes
               </Link>
               <Link
                 href="/contacto"
-                className="rounded-md border border-white/60 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-white/10"
+                className="ui-btn rounded-md border border-white/60 px-5 py-2.5 text-sm font-semibold text-white hover:bg-white/10"
               >
                 Contactar
               </Link>
@@ -85,7 +86,7 @@ export default async function Home() {
 
       <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-14 px-4 py-8">
       {/* Cards destaques (template-inspired) */}
-      <section className="grid gap-4 md:grid-cols-3">
+      <ScrollReveal as="section" className="grid gap-4 md:grid-cols-3">
         {[
           {
             title: "Pacotes",
@@ -117,12 +118,12 @@ export default async function Home() {
             </p>
           </Link>
         ))}
-      </section>
+      </ScrollReveal>
 
       {/* Opcoes de destino (carousel) */}
       <DestinationCarousel />
 
-      <section>
+      <ScrollReveal as="section" className="ui-section-sep">
         <div className="mb-5 rounded-xl bg-[color:var(--brand-900)] px-5 py-4 text-center">
           <h2 className="text-2xl font-bold text-white">Pacotes nacionais</h2>
           <div className="mt-1">
@@ -140,9 +141,9 @@ export default async function Home() {
             <PackageCard key={item.id} item={item} />
           ))}
         </div>
-      </section>
+      </ScrollReveal>
 
-      <section>
+      <ScrollReveal as="section" className="ui-section-sep">
         <div className="mb-5 rounded-xl bg-[color:var(--brand-900)] px-5 py-4 text-center">
           <h2 className="text-2xl font-bold text-white">Pacotes internacionais</h2>
           <div className="mt-1">
@@ -160,13 +161,24 @@ export default async function Home() {
             <PackageCard key={item.id} item={item} />
           ))}
         </div>
-      </section>
+      </ScrollReveal>
 
       {/* CTA (template-inspired) */}
       <HelpCta />
 
-      <section className="rounded-3xl border border-zinc-200/90 bg-white p-6 shadow-sm ring-1 ring-zinc-900/[0.04] md:p-8 lg:p-10">
-        <div className="flex flex-col gap-6 border-b border-zinc-100 pb-8 sm:flex-row sm:items-end sm:justify-between">
+      <ScrollReveal
+        as="section"
+        className="relative overflow-hidden rounded-3xl border border-zinc-200/90 bg-white p-6 shadow-sm ring-1 ring-zinc-900/[0.04] md:p-8 lg:p-10"
+      >
+        <div
+          className="pointer-events-none absolute -right-12 -top-16 h-48 w-48 rounded-full bg-[color:var(--brand-500)]/10 blur-3xl"
+          aria-hidden
+        />
+        <div
+          className="pointer-events-none absolute -bottom-20 -left-10 h-56 w-56 rounded-full bg-cyan-300/10 blur-3xl"
+          aria-hidden
+        />
+        <div className="ui-reveal relative flex flex-col gap-6 border-b border-zinc-100 pb-8 sm:flex-row sm:items-end sm:justify-between">
           <div className="min-w-0">
             <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[color:var(--brand-700)]">Frota</p>
             <h2 className="mt-1.5 text-2xl font-bold tracking-tight text-[color:var(--brand-900)] md:text-3xl">
@@ -179,22 +191,30 @@ export default async function Home() {
           </div>
           <Link
             href="/viaturas"
-            className="inline-flex shrink-0 items-center justify-center self-start rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 text-sm font-semibold text-[color:var(--brand-900)] transition hover:border-[color:var(--brand-500)]/40 hover:bg-white sm:self-end"
+            className="ui-btn inline-flex shrink-0 items-center justify-center self-start rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 text-sm font-semibold text-[color:var(--brand-900)] transition hover:border-[color:var(--brand-500)]/40 hover:bg-white sm:self-end"
           >
             Ver toda a frota
           </Link>
         </div>
-        <div className="mt-8 grid gap-8 lg:grid-cols-12 lg:items-start lg:gap-10">
+        <div className="relative mt-8 grid gap-8 lg:grid-cols-12 lg:items-start lg:gap-10">
           <VehicleHowItWorksAside />
           <div className="grid gap-6 sm:grid-cols-2 lg:col-span-8 xl:grid-cols-2">
-            {vehicleItems.map((vehicle) => (
-              <VehicleCard key={vehicle.id} vehicle={vehicle} />
+            {vehicleItems.map((vehicle, index) => (
+              <div
+                key={vehicle.id}
+                className={`ui-reveal ${index === 1 ? "ui-reveal-delay-1" : index === 2 ? "ui-reveal-delay-2" : ""}`}
+              >
+                <VehicleCard vehicle={vehicle} />
+              </div>
             ))}
           </div>
         </div>
-      </section>
+      </ScrollReveal>
 
-      <section className="relative overflow-hidden rounded-3xl border border-zinc-200/80 bg-gradient-to-br from-[#0A2342] via-[#143a6b] to-[#0c2848] text-white shadow-lg ring-1 ring-zinc-900/10">
+      <ScrollReveal
+        as="section"
+        className="relative overflow-hidden rounded-3xl border border-zinc-200/80 bg-gradient-to-br from-[#0A2342] via-[#143a6b] to-[#0c2848] text-white shadow-lg ring-1 ring-zinc-900/10"
+      >
         <div
           className="pointer-events-none absolute inset-0 rounded-3xl bg-[radial-gradient(70%_50%_at_100%_0%,rgba(78,168,222,0.12),transparent)]"
           aria-hidden
@@ -264,7 +284,7 @@ export default async function Home() {
             ))}
           </div>
         </div>
-      </section>
+      </ScrollReveal>
       </div>
     </main>
   );

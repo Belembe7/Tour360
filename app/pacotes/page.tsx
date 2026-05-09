@@ -1,5 +1,6 @@
 import { PackagesDiscovery } from "@/components/packages/packages-discovery";
 import { PageBack } from "@/components/layout/page-back";
+import { ScrollReveal } from "@/components/ui/scroll-reveal";
 import { createClient } from "@/lib/supabase/server";
 import type { Package } from "@/types";
 
@@ -27,7 +28,9 @@ export default async function PacotesPage(props: { searchParams: SearchParams })
   return (
     <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-10">
       <PageBack href="/" label="Voltar ao inicio" className="mb-4" />
-      <PackagesDiscovery items={items} />
+      <ScrollReveal as="section">
+        <PackagesDiscovery items={items} />
+      </ScrollReveal>
     </main>
   );
 }

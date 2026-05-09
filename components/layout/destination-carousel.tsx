@@ -88,28 +88,28 @@ export function DestinationCarousel() {
               key={item.title}
               href={item.href}
               data-destination-card
-              className="group relative h-[340px] w-[280px] flex-none snap-start overflow-hidden rounded-2xl border border-white/20 bg-black/20 shadow-sm transition-transform duration-300 hover:scale-[1.02] hover:shadow-lg md:w-[300px]"
+              className="group flex h-[330px] w-[280px] flex-none snap-start flex-col overflow-hidden rounded-2xl border border-zinc-200/80 bg-white shadow-sm ring-1 ring-zinc-900/[0.03] transition hover:-translate-y-1 hover:shadow-lg md:w-[300px]"
             >
-              <Image
-                src={item.imageSrc}
-                alt={item.title}
-                fill
-                className="object-cover transition-transform duration-500 group-hover:scale-[1.05]"
-              />
-              <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/25 to-black/80" />
-
-              <div className="absolute left-4 top-4 inline-flex rounded-full bg-black/40 px-3 py-1 text-xs font-semibold text-white ring-1 ring-white/25 backdrop-blur-sm">
-                Destino
+              <div className="relative h-[185px] w-full overflow-hidden bg-zinc-100">
+                <Image
+                  src={item.imageSrc}
+                  alt={item.title}
+                  fill
+                  sizes="(max-width: 768px) 280px, 300px"
+                  className="object-cover transition-transform duration-500 group-hover:scale-[1.05]"
+                />
+                <div className="absolute left-3 top-3 inline-flex rounded-md bg-[color:var(--brand-900)] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white shadow-sm">
+                  Destino
+                </div>
               </div>
 
-              <div className="absolute bottom-0 left-0 right-0 p-4">
-                <h4 className="text-lg font-extrabold text-white [text-shadow:0_2px_10px_rgba(0,0,0,0.65)]">
-                  {item.title}
-                </h4>
-                <p className="mt-1 text-sm text-white/80 [text-shadow:0_1px_8px_rgba(0,0,0,0.7)]">
+              <div className="flex flex-1 flex-col p-4">
+                <h4 className="text-lg font-bold leading-tight text-[color:var(--brand-900)]">{item.title}</h4>
+                <p className="mt-1 line-clamp-2 min-h-[2.5rem] text-sm text-zinc-600">
                   {item.subtitle}
                 </p>
-                <span className="mt-3 inline-flex items-center gap-2 rounded-md border border-white/25 bg-black/35 px-3 py-2 text-sm font-semibold text-white backdrop-blur-sm transition hover:bg-black/50">
+
+                <span className="mt-auto inline-flex items-center justify-center gap-2 rounded-lg bg-[color:var(--brand-700)] px-3 py-2.5 text-sm font-semibold text-white transition hover:bg-[color:var(--brand-900)]">
                   Ver opcoes
                   <span aria-hidden>→</span>
                 </span>
@@ -121,7 +121,7 @@ export function DestinationCarousel() {
         <button
           type="button"
           onClick={scrollNext}
-          className="absolute right-0 top-1/2 -translate-y-1/2 rounded-full border border-white/25 bg-black/35 p-3 text-white shadow-sm backdrop-blur-sm transition hover:bg-black/50"
+          className="absolute right-0 top-1/2 -translate-y-1/2 rounded-full border border-white/50 bg-white/90 p-3 text-[color:var(--brand-900)] shadow-sm backdrop-blur-sm transition hover:bg-white"
           aria-label="Ver mais destinos"
           title="Ver mais destinos"
         >

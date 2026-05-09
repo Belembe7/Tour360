@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, Car, Hash, Users } from "lucide-react";
+import { ArrowRight, Car } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import type { Vehicle } from "@/types";
 
@@ -36,7 +36,7 @@ export function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
   return (
     <article
       className={[
-        "group flex h-full flex-col overflow-hidden rounded-2xl border border-zinc-200/90 bg-white shadow-md ring-1 ring-zinc-900/[0.04] transition",
+        "group ui-surface-lift flex h-full flex-col overflow-hidden rounded-2xl border border-zinc-200/90 bg-white shadow-md ring-1 ring-zinc-900/[0.04]",
         unavailable ? "opacity-[0.92]" : "hover:-translate-y-0.5 hover:border-[color:var(--brand-500)]/30 hover:shadow-lg hover:ring-[color:var(--brand-500)]/15",
       ].join(" ")}
     >
@@ -57,31 +57,18 @@ export function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
             sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 33vw"
           />
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-zinc-900/85 via-zinc-900/25 to-transparent" aria-hidden />
-        <div className="absolute inset-x-0 bottom-0 p-4">
-          <div className="mb-2 flex flex-wrap gap-1.5">
-            <span className="inline-flex items-center rounded-md bg-white/95 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[color:var(--brand-900)] shadow-sm ring-1 ring-black/5">
-              {categoryLabel(vehicle)}
-            </span>
-            {typeof vehicle.capacity === "number" && vehicle.capacity > 0 && (
-              <span className="inline-flex items-center gap-1 rounded-md bg-black/45 px-2 py-0.5 text-[10px] font-semibold text-white backdrop-blur-sm ring-1 ring-white/15">
-                <Users className="h-3 w-3" aria-hidden />
-                {vehicle.capacity} lugares
-              </span>
-            )}
-            {vehicle.plate ? (
-              <span className="inline-flex items-center gap-1 rounded-md bg-black/45 px-2 py-0.5 text-[10px] font-mono font-medium text-white/95 backdrop-blur-sm ring-1 ring-white/15">
-                <Hash className="h-3 w-3" aria-hidden />
-                {vehicle.plate}
-              </span>
-            ) : null}
-          </div>
-          <h3 className="text-lg font-bold leading-tight text-white drop-shadow-sm md:text-xl">{vehicle.model}</h3>
-        </div>
+        <span className="absolute left-3 top-3 inline-flex items-center rounded-md bg-[color:var(--brand-900)] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white shadow-sm">
+          {categoryLabel(vehicle)}
+        </span>
       </div>
 
       <div className="flex flex-1 flex-col border-t border-zinc-100 bg-gradient-to-b from-white to-zinc-50/80 p-4">
-        <p className="line-clamp-2 min-h-[2.5rem] text-sm leading-relaxed text-zinc-600">
+        <h3 className="text-lg font-bold leading-tight text-[color:var(--brand-900)]">{vehicle.model}</h3>
+        <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-zinc-500">
+          {typeof vehicle.capacity === "number" && vehicle.capacity > 0 ? <span>{vehicle.capacity} lugares</span> : null}
+          {vehicle.plate ? <span className="font-mono">{vehicle.plate}</span> : null}
+        </div>
+        <p className="mt-2 line-clamp-2 min-h-[2.5rem] text-sm leading-relaxed text-zinc-600">
           {vehicle.description ?? "Viatura para turismo, transfer e deslocacoes com conforto e seguranca."}
         </p>
 
@@ -107,7 +94,7 @@ export function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
         <Link
           href={unavailable ? "/viaturas" : `/viaturas?viatura=${vehicle.id}#reservar-viatura`}
           className={[
-            "mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold transition",
+            "ui-btn mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-semibold",
             unavailable
               ? "border border-zinc-200 bg-zinc-50 text-zinc-700 hover:bg-zinc-100"
               : "bg-[color:var(--brand-900)] text-white shadow-sm hover:bg-[color:var(--brand-700)]",

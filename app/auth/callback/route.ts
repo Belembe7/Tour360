@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
   const nextParam = requestUrl.searchParams.get("next") || "/perfil";
   const safeNext = nextParam.startsWith("/") ? nextParam : "/perfil";
 
-  let response = NextResponse.redirect(new URL(safeNext, request.url));
+  const response = NextResponse.redirect(new URL(safeNext, request.url));
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

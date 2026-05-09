@@ -55,21 +55,6 @@ export function BookingForm({ packageId, packageSlug, packageName, basePrice, de
   const [serverMessage, setServerMessage] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
-  const nationalRouteOrder = useMemo(
-    () => [
-      "Beira - Maputo",
-      "Beira - Nampula",
-      "Maputo - Beira",
-      "Maputo - Vilankulo",
-      "Vilankulo - Beira",
-      "Beira - Lichinga",
-      "Maputo - Lichinga",
-      "Lichinga - Maputo",
-      "Nampula - Beira",
-    ],
-    [],
-  );
-
   const {
     register,
     handleSubmit,
@@ -244,7 +229,7 @@ export function BookingForm({ packageId, packageSlug, packageName, basePrice, de
 
       <form
         onSubmit={handleSubmit(onSubmit)}
-        className="space-y-6 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm ring-1 ring-zinc-900/5 md:p-6"
+        className="ui-surface-lift space-y-6 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm ring-1 ring-zinc-900/5 md:p-6"
         aria-label="Dados da reserva"
         id={formId}
       >
@@ -518,7 +503,10 @@ export function BookingForm({ packageId, packageSlug, packageName, basePrice, de
         <button
           type="submit"
           disabled={pending}
-          className="w-full rounded-xl bg-[color:var(--brand-900)] px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[color:var(--brand-700)] disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto"
+          className={[
+            "ui-btn w-full rounded-xl bg-[color:var(--brand-900)] px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-[color:var(--brand-700)] disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto",
+            pending ? "ui-btn-loading" : "",
+          ].join(" ")}
         >
           {pending ? "A confirmar..." : "Confirmar reserva"}
         </button>

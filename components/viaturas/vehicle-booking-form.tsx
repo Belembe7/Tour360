@@ -127,7 +127,7 @@ export function VehicleBookingForm({ vehicles }: Props) {
 
       <form
         onSubmit={handleSubmit(onSubmit)}
-        className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-md ring-1 ring-zinc-900/5 md:p-7"
+        className="ui-surface-lift rounded-2xl border border-zinc-200 bg-white p-5 shadow-md ring-1 ring-zinc-900/5 md:p-7"
         aria-label="Reserva de viatura"
         noValidate
       >
@@ -279,7 +279,10 @@ export function VehicleBookingForm({ vehicles }: Props) {
         <button
           type="submit"
           disabled={pending}
-          className="mt-5 w-full rounded-xl bg-[color:var(--brand-900)] py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[color:var(--brand-700)] disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto sm:px-8"
+          className={[
+            "ui-btn mt-5 w-full rounded-xl bg-[color:var(--brand-900)] py-3 text-sm font-semibold text-white shadow-sm hover:bg-[color:var(--brand-700)] disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto sm:px-8",
+            pending ? "ui-btn-loading" : "",
+          ].join(" ")}
         >
           {pending ? "A confirmar..." : "Confirmar reserva de viatura"}
         </button>

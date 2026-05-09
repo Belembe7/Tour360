@@ -41,9 +41,8 @@ export function NavbarUserMenu({ displayName, initial, email, isAdmin, showAtend
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        aria-expanded={open}
         aria-haspopup="menu"
-        className="inline-flex max-w-[min(100vw-8rem,220px)] items-center gap-2 rounded-full border border-zinc-200/90 bg-white py-1 pl-1 pr-2.5 text-left shadow-sm ring-1 ring-zinc-900/5 transition hover:border-zinc-300 hover:shadow"
+        className="ui-btn inline-flex max-w-[min(100vw-8rem,220px)] items-center gap-2 rounded-full border border-zinc-200/90 bg-white py-1 pl-1 pr-2.5 text-left shadow-sm ring-1 ring-zinc-900/5 hover:border-zinc-300 hover:shadow"
       >
         <span
           className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[color:var(--brand-500)] to-[color:var(--brand-800)] text-sm font-bold text-white shadow-inner"
@@ -72,7 +71,7 @@ export function NavbarUserMenu({ displayName, initial, email, isAdmin, showAtend
               href="/perfil"
               role="menuitem"
               onClick={() => setOpen(false)}
-              className="flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-zinc-700 transition hover:bg-zinc-50"
+              className="ui-nav-link flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-zinc-700 hover:bg-zinc-50"
             >
               <LayoutGrid className="h-4 w-4 text-[color:var(--brand-700)]" />
               Meu painel
@@ -81,7 +80,7 @@ export function NavbarUserMenu({ displayName, initial, email, isAdmin, showAtend
               href="/reservas"
               role="menuitem"
               onClick={() => setOpen(false)}
-              className="flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-zinc-700 transition hover:bg-zinc-50"
+              className="ui-nav-link flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-zinc-700 hover:bg-zinc-50"
             >
               <Ticket className="h-4 w-4 text-[color:var(--brand-700)]" />
               Reservas
@@ -91,7 +90,7 @@ export function NavbarUserMenu({ displayName, initial, email, isAdmin, showAtend
                 href="/atendimento"
                 role="menuitem"
                 onClick={() => setOpen(false)}
-                className="flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-indigo-900 transition hover:bg-indigo-50"
+                className="ui-nav-link flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-indigo-900 hover:bg-indigo-50"
               >
                 <Headphones className="h-4 w-4 text-indigo-700" />
                 Atendimento
@@ -102,7 +101,7 @@ export function NavbarUserMenu({ displayName, initial, email, isAdmin, showAtend
                 href="/admin"
                 role="menuitem"
                 onClick={() => setOpen(false)}
-                className="flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-emerald-800 transition hover:bg-emerald-50"
+                className="ui-nav-link flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-emerald-800 hover:bg-emerald-50"
               >
                 <span className="text-xs font-bold uppercase tracking-wider">Admin</span>
               </Link>
@@ -113,7 +112,7 @@ export function NavbarUserMenu({ displayName, initial, email, isAdmin, showAtend
               type="button"
               role="menuitem"
               onClick={signOut}
-              className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-sm font-medium text-red-700 transition hover:bg-red-50"
+              className="ui-nav-link flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-sm font-medium text-red-700 hover:bg-red-50"
             >
               <LogOut className="h-4 w-4" />
               Terminar sessao

@@ -212,7 +212,10 @@ export function CorporateForm() {
       <button
         type="submit"
         disabled={pending}
-        className="w-full rounded-xl bg-[color:var(--brand-900)] py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[color:var(--brand-700)] disabled:cursor-not-allowed disabled:opacity-70"
+        className={[
+          "ui-btn w-full rounded-xl bg-[color:var(--brand-900)] py-3 text-sm font-semibold text-white shadow-sm hover:bg-[color:var(--brand-700)] disabled:cursor-not-allowed disabled:opacity-70",
+          pending ? "ui-btn-loading" : "",
+        ].join(" ")}
       >
         {pending ? "A enviar..." : "Submeter ficha para validacao"}
       </button>

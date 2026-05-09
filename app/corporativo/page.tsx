@@ -8,6 +8,7 @@ import {
   LineChart,
   UsersRound,
 } from "lucide-react";
+import { ScrollReveal } from "@/components/ui/scroll-reveal";
 
 const highlights = [
   {
@@ -39,7 +40,7 @@ export default function CorporativoPage() {
       <PageBack href="/" label="Voltar ao inicio" variant="inverted" className="mb-6" />
 
       <div className="grid gap-10 lg:grid-cols-[1fr_1.05fr] lg:items-start lg:gap-12">
-        <div>
+        <ScrollReveal as="div">
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-sky-200/90">B2B · TOUR 360</p>
             <h1 className="mt-3 text-3xl font-bold leading-tight tracking-tight text-white md:text-4xl lg:text-[2.4rem]">
               Servicos corporativos
@@ -53,7 +54,7 @@ export default function CorporativoPage() {
               {trust.map((item) => (
                 <li
                   key={item.label}
-                  className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-medium text-sky-50 ring-1 ring-white/5 backdrop-blur-sm"
+                  className="ui-pill-tab inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-medium text-sky-50 ring-1 ring-white/5 backdrop-blur-sm"
                 >
                   <item.icon className="h-3.5 w-3.5 text-cyan-200" aria-hidden />
                   {item.label}
@@ -65,7 +66,7 @@ export default function CorporativoPage() {
               {highlights.map((item) => (
                 <div
                   key={item.title}
-                  className="group flex gap-4 rounded-2xl border border-white/10 bg-white/[0.06] p-4 ring-1 ring-white/5 transition hover:border-white/20 hover:bg-white/[0.09]"
+                  className="ui-grid-card group flex gap-4 p-4 ring-1 ring-white/5"
                 >
                   <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-sky-400/25 to-sky-900/40 text-cyan-100 ring-1 ring-white/10">
                     <item.icon className="h-5 w-5" aria-hidden />
@@ -77,9 +78,9 @@ export default function CorporativoPage() {
                 </div>
               ))}
             </div>
-        </div>
+        </ScrollReveal>
 
-        <section className="rounded-3xl border border-white/15 bg-white p-1 shadow-2xl shadow-black/30 ring-1 ring-white/20">
+        <ScrollReveal as="section" className="rounded-3xl border border-white/15 bg-white p-1 shadow-2xl shadow-black/30 ring-1 ring-white/20">
           <div className="rounded-[1.35rem] bg-gradient-to-b from-zinc-50 to-white p-5 md:p-7">
             <div className="border-b border-zinc-200/80 pb-5">
               <h2 className="text-lg font-bold text-[color:var(--brand-900)]">Abertura de ficha corporativa</h2>
@@ -93,7 +94,7 @@ export default function CorporativoPage() {
               <CorporateForm />
             </div>
           </div>
-        </section>
+        </ScrollReveal>
       </div>
     </main>
   );

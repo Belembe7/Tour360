@@ -28,6 +28,24 @@ type BookingRow = {
   destinations: { name: string } | null;
 };
 
+type BookingNotesPayload = {
+  passenger?: {
+    fullName?: string;
+    biNumber?: string;
+  };
+};
+
+function parseBookingNotes(notes: string | null): BookingNotesPayload | null {
+  if (!notes) return null;
+  try {
+    const parsed: unknown = JSON.parse(notes);
+    if (parsed && typeof parsed === "object") return parsed as BookingNotesPayload;
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 function formatDatePt(isoDate: string) {
   try {
     return new Intl.DateTimeFormat("pt-MZ", {
@@ -238,15 +256,9 @@ export default async function ReservasPage() {
                     {(() => {
                       let passengerName: string | null = null;
                       let passengerBi: string | null = null;
-                      if (booking.notes) {
-                        try {
-                          const parsed = JSON.parse(booking.notes) as any;
-                          passengerName = parsed?.passenger?.fullName ?? null;
-                          passengerBi = parsed?.passenger?.biNumber ?? null;
-                        } catch {
-                          // ignore non-JSON notes
-                        }
-                      }
+                      const parsedNotes = parseBookingNotes(booking.notes);
+                      passengerName = parsedNotes?.passenger?.fullName ?? null;
+                      passengerBi = parsedNotes?.passenger?.biNumber ?? null;
                       return (
                         <BookingReceiptButton
                           bookingId={booking.id}
