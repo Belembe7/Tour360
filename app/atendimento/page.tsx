@@ -9,6 +9,7 @@ import { DemandTypeChart, type DemandSlice } from "@/components/atendimento/dema
 import { StaffBookingsFlowChart, type StaffFlowDayPoint } from "@/components/atendimento/staff-bookings-flow-chart";
 import { StaffTopRoutesChart, type StaffRouteSlice } from "@/components/atendimento/staff-top-routes-chart";
 import { RESERVATION_TYPE_LABELS } from "@/lib/atendimento/labels";
+import { mapVehicleBookingToStaffRow, sortByCreatedDesc, type VehicleBookingHistoryRow } from "@/lib/bookings/vehicle-history";
 import { createClient } from "@/lib/supabase/server";
 import { formatCurrency } from "@/lib/utils";
 
@@ -21,9 +22,11 @@ type StaffBookingRow = {
   total_price: number;
   status: string;
   created_by_user_id: string | null;
+  isVehicleSite?: boolean;
 };
 
 function originLabel(b: StaffBookingRow): string {
+  if (b.isVehicleSite) return "Site (/viaturas)";
   return b.created_by_user_id ? "Balcao" : "Site";
 }
 
@@ -109,11 +112,39 @@ export default async function AtendimentoDashboardPage({
     .lte("created_at", toIso)
     .order("created_at", { ascending: false });
 
-  if (queryError) {
-    return <AtendimentoDataError error={queryError.message} />;
+  const { data: vehicleRows, error: vehicleError } = await supabase
+    .from("vehicle_bookings")
+    .select(
+      "id, created_at, start_date, end_date, total_days, total_price, status, destination, user_id, vehicles(model)",
+    )
+    .gte("created_at", fromIso)
+    .lte("created_at", toIso)
+    .order("created_at", { ascending: false });
+
+  if (queryError || vehicleError) {
+    return <AtendimentoDataError error={queryError?.message ?? vehicleError?.message ?? "Erro ao carregar"} />;
   }
 
-  const list = (rows ?? []) as StaffBookingRow[];
+  const vehicleData = (vehicleRows ?? []) as VehicleBookingHistoryRow[];
+  const userIds = [...new Set(vehicleData.map((v) => v.user_id).filter(Boolean))] as string[];
+  const profileMap = new Map<string, { full_name: string | null }>();
+
+  if (userIds.length > 0) {
+    const { data: profiles } = await supabase.from("profiles").select("id, full_name").in("id", userIds);
+    for (const profile of profiles ?? []) {
+      profileMap.set(profile.id, { full_name: profile.full_name });
+    }
+  }
+
+  const vehicleStaffRows: StaffBookingRow[] = vehicleData.map((row) => ({
+    ...mapVehicleBookingToStaffRow(row, row.user_id ? profileMap.get(row.user_id) : null),
+    isVehicleSite: true,
+  }));
+
+  const list = sortByCreatedDesc([
+    ...((rows ?? []) as StaffBookingRow[]).map((b) => ({ ...b, isVehicleSite: false })),
+    ...vehicleStaffRows,
+  ]);
 
   const total = list.length;
   const pendentes = list.filter((b) => b.status === "pendente").length;
@@ -327,12 +358,16 @@ export default async function AtendimentoDashboardPage({
                         {b.status}
                       </span>
                       <span className="font-semibold text-orange-700">{formatCurrency(b.total_price)}</span>
-                      <Link
-                        href={`/atendimento/reservas/${b.id}`}
-                        className="text-xs font-semibold text-[#1D4E89] hover:underline"
-                      >
-                        Detalhes
-                      </Link>
+                      {b.isVehicleSite ? (
+                        <span className="text-xs text-zinc-500">/viaturas</span>
+                      ) : (
+                        <Link
+                          href={`/atendimento/reservas/${b.id}`}
+                          className="text-xs font-semibold text-[#1D4E89] hover:underline"
+                        >
+                          Detalhes
+                        </Link>
+                      )}
                     </div>
                   </li>
                 ))}

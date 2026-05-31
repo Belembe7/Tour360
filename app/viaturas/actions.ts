@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { vehicleBookingSchema } from "@/lib/validations";
 
@@ -56,6 +57,12 @@ export async function createVehicleBooking(input: VehicleBookingInput) {
     .single();
 
   if (error || !created) return { error: error?.message ?? "Nao foi possivel criar a reserva." };
+
+  revalidatePath("/reservas");
+  revalidatePath("/perfil");
+  revalidatePath("/atendimento");
+  revalidatePath("/atendimento/reservas");
+  revalidatePath("/viaturas");
 
   return {
     success: true,

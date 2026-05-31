@@ -47,7 +47,10 @@ export async function payVehicleBookingWithMpesa(vehicleBookingId: string) {
   }
 
   revalidatePath("/perfil");
+  revalidatePath("/reservas");
   revalidatePath("/viaturas");
+  revalidatePath("/atendimento");
+  revalidatePath("/atendimento/reservas");
   revalidatePath("/admin/viaturas");
 
   if (simulation.status === "confirmado") {

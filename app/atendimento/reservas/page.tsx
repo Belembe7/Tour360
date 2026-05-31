@@ -7,25 +7,20 @@ import { DeleteBookingButton } from "@/components/bookings/delete-booking-button
 import { createClient } from "@/lib/supabase/server";
 import { fetchAllRows } from "@/lib/supabase/fetch-all-rows";
 import { getBookingClientLabel, matchesBookingSearch } from "@/lib/bookings/display";
+import {
+  mapVehicleBookingToHistorico,
+  matchesVehicleHistoricoSearch,
+  sortByCreatedDesc,
+  type AtendimentoHistoricoRow,
+  type VehicleBookingHistoryRow,
+} from "@/lib/bookings/vehicle-history";
 import { formatCurrency } from "@/lib/utils";
 import { RESERVATION_TYPE_LABELS } from "@/lib/atendimento/labels";
 
-type Row = {
-  id: string;
-  created_at: string;
-  reservation_type: string;
-  client_name: string | null;
-  client_contact: string | null;
-  client_email: string | null;
-  departure_date: string;
-  return_date: string | null;
-  total_price: number;
-  status: string;
-  notes: string | null;
-  created_by_user_id: string | null;
-};
+type Row = AtendimentoHistoricoRow;
 
 function originLabel(b: Row): string {
+  if (b.isVehicleSite) return "Site (/viaturas)";
   if (b.created_by_user_id) return "Balcao";
   return "Site";
 }
@@ -51,7 +46,9 @@ export default async function AtendimentoHistoricoPage({
   const estado = typeof sp.estado === "string" ? sp.estado : undefined;
   const q = typeof sp.q === "string" ? sp.q.trim() : undefined;
 
-  const { data: fetched, error: queryError } = await fetchAllRows<Row>(async (fromOffset, toOffset) => {
+  const includeVehicleBookings = !tipo || tipo === "aluguer";
+
+  const { data: fetched, error: queryError } = await fetchAllRows<Omit<Row, "isVehicleSite">>(async (fromOffset, toOffset) => {
     let query = supabase
       .from("bookings")
       .select(
@@ -73,13 +70,75 @@ export default async function AtendimentoHistoricoPage({
     }
 
     const { data, error } = await query.range(fromOffset, toOffset);
-    return { data: data as Row[] | null, error };
+    return { data: data as Omit<Row, "isVehicleSite">[] | null, error };
   });
 
-  const list = q ? fetched.filter((b) => matchesBookingSearch(b, q)) : fetched;
+  let vehicleRows: Row[] = [];
+  let vehicleError: string | null = null;
 
-  if (queryError) {
-    return <AtendimentoDataError error={queryError} />;
+  if (includeVehicleBookings) {
+    const { data: vehicleData, error: vErr } = await fetchAllRows<VehicleBookingHistoryRow>(
+      async (fromOffset, toOffset) => {
+        let query = supabase
+          .from("vehicle_bookings")
+          .select(
+            "id, created_at, start_date, end_date, total_days, total_price, status, destination, user_id, vehicles(model)",
+          )
+          .order("created_at", { ascending: false });
+
+        if (from) {
+          query = query.gte("created_at", new Date(from + "T00:00:00").toISOString());
+        }
+        if (to) {
+          query = query.lte("created_at", new Date(to + "T23:59:59.999").toISOString());
+        }
+        if (estado && ["pendente", "confirmada", "cancelada"].includes(estado)) {
+          query = query.eq("status", estado);
+        } else if (estado === "concluida") {
+          return { data: [], error: null };
+        }
+
+        const { data, error } = await query.range(fromOffset, toOffset);
+        return { data: data as VehicleBookingHistoryRow[] | null, error };
+      },
+    );
+
+    if (vErr) {
+      vehicleError = vErr;
+    } else {
+      const userIds = [...new Set(vehicleData.map((v) => v.user_id).filter(Boolean))] as string[];
+      const profileMap = new Map<string, { full_name: string | null; phone: string | null }>();
+
+      if (userIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("id, full_name, phone")
+          .in("id", userIds);
+
+        for (const profile of profiles ?? []) {
+          profileMap.set(profile.id, {
+            full_name: profile.full_name,
+            phone: profile.phone,
+          });
+        }
+      }
+
+      vehicleRows = vehicleData.map((row) =>
+        mapVehicleBookingToHistorico(row, row.user_id ? profileMap.get(row.user_id) : null),
+      );
+    }
+  }
+
+  const bookingRows: Row[] = fetched.map((b) => ({ ...b, isVehicleSite: false }));
+  const merged = sortByCreatedDesc([...bookingRows, ...vehicleRows]);
+  const list = q
+    ? merged.filter((b) =>
+        b.isVehicleSite ? matchesVehicleHistoricoSearch(b, q) : matchesBookingSearch(b, q),
+      )
+    : merged;
+
+  if (queryError || vehicleError) {
+    return <AtendimentoDataError error={queryError ?? vehicleError ?? "Erro desconhecido"} />;
   }
 
   return (
@@ -115,7 +174,10 @@ export default async function AtendimentoHistoricoPage({
               <tr key={b.id} className="border-t border-zinc-200">
                 <td className="px-4 py-3">
                   <p className="font-medium text-zinc-900">{getBookingClientLabel(b)}</p>
-                  <p className="text-xs text-zinc-500">{b.client_contact ?? b.client_email ?? ""}</p>
+                  <p className="text-xs text-zinc-500">
+                    {b.isVehicleSite && b.notes ? `${b.notes} · ` : ""}
+                    {b.client_contact ?? b.client_email ?? ""}
+                  </p>
                 </td>
                 <td className="px-4 py-3 text-xs text-zinc-600">{originLabel(b)}</td>
                 <td className="px-4 py-3">
@@ -130,10 +192,14 @@ export default async function AtendimentoHistoricoPage({
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex flex-col gap-2">
-                    <Link href={`/atendimento/reservas/${b.id}`} className="font-semibold text-[#1D4E89] hover:underline">
-                      Detalhes
-                    </Link>
-                    <DeleteBookingButton bookingId={b.id} />
+                    {b.isVehicleSite ? (
+                      <span className="text-xs text-zinc-500">Reserva em /viaturas</span>
+                    ) : (
+                      <Link href={`/atendimento/reservas/${b.id}`} className="font-semibold text-[#1D4E89] hover:underline">
+                        Detalhes
+                      </Link>
+                    )}
+                    {!b.isVehicleSite ? <DeleteBookingButton bookingId={b.id} /> : null}
                   </div>
                 </td>
               </tr>

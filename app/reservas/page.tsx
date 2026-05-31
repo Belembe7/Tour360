@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
   CalendarDays,
+  CarFront,
   CircleDollarSign,
   Luggage,
   MapPin,
@@ -12,6 +13,9 @@ import { DeleteBookingButton } from "@/components/bookings/delete-booking-button
 import { BookingReceiptButton } from "@/components/packages/booking-receipt-button";
 import { PageBack } from "@/components/layout/page-back";
 import { MpesaPayButton } from "@/components/payments/mpesa-pay-button";
+import { VehicleBookingReceipt } from "@/components/viaturas/vehicle-booking-receipt";
+import { VehicleMpesaPayButton } from "@/components/viaturas/vehicle-mpesa-pay-button";
+import { sortByCreatedDesc, vehicleModelFromRow, type VehicleBookingHistoryRow } from "@/lib/bookings/vehicle-history";
 import { formatCurrency } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/server";
 import { fetchAllRows } from "@/lib/supabase/fetch-all-rows";
@@ -32,6 +36,10 @@ type BookingRow = {
 };
 
 type SearchParams = Promise<{ reserva?: string }>;
+
+type TimelineEntry =
+  | { kind: "package"; created_at: string; booking: BookingRow }
+  | { kind: "vehicle"; created_at: string; vehicle: VehicleBookingHistoryRow };
 
 function bookingDestinationLabel(booking: BookingRow): string {
   return (
@@ -100,31 +108,65 @@ export default async function ReservasPage(props: { searchParams: SearchParams }
     redirect("/login?next=/reservas");
   }
 
-  const { data: bookings, error: loadError } = await fetchAllRows<BookingRow>(async (from, to) => {
-    const { data, error } = await supabase
-      .from("bookings")
-      .select(
-        "id, created_at, departure_date, return_date, num_travelers, total_price, status, payment_status, notes, destination_free, packages(name), destinations(name)",
-      )
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false })
-      .range(from, to);
-    return { data: data as BookingRow[] | null, error };
-  });
+  const [{ data: bookings, error: loadError }, { data: vehicleBookings, error: vehicleError }] = await Promise.all([
+    fetchAllRows<BookingRow>(async (from, to) => {
+      const { data, error } = await supabase
+        .from("bookings")
+        .select(
+          "id, created_at, departure_date, return_date, num_travelers, total_price, status, payment_status, notes, destination_free, packages(name), destinations(name)",
+        )
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .range(from, to);
+      return { data: data as BookingRow[] | null, error };
+    }),
+    fetchAllRows<VehicleBookingHistoryRow>(async (from, to) => {
+      const { data, error } = await supabase
+        .from("vehicle_bookings")
+        .select(
+          "id, created_at, start_date, end_date, total_days, total_price, status, destination, vehicles(model)",
+        )
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .range(from, to);
+      return { data: data as VehicleBookingHistoryRow[] | null, error };
+    }),
+  ]);
 
-  if (loadError) {
+  if (loadError || vehicleError) {
     return (
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-10">
         <PageBack href="/" label="Voltar ao inicio" variant="inverted" className="mb-6" />
-        <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800">Erro ao carregar reservas: {loadError}</p>
+        <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800">
+          Erro ao carregar reservas: {loadError ?? vehicleError}
+        </p>
       </main>
     );
   }
 
-  const total = bookings.length;
-  const pendentesPagamento = bookings.filter((b) => b.payment_status !== "pago").length;
-  const confirmadas = bookings.filter((b) => b.status === "confirmada").length;
-  const totalInvestido = bookings.reduce((sum, b) => sum + (b.total_price ?? 0), 0);
+  const timeline: TimelineEntry[] = sortByCreatedDesc([
+    ...bookings.map((booking) => ({
+      kind: "package" as const,
+      created_at: booking.created_at ?? "",
+      booking,
+    })),
+    ...vehicleBookings.map((vehicle) => ({
+      kind: "vehicle" as const,
+      created_at: vehicle.created_at,
+      vehicle,
+    })),
+  ]).filter((entry) => entry.created_at);
+
+  const total = timeline.length;
+  const pendentesPagamento =
+    bookings.filter((b) => b.payment_status !== "pago").length +
+    vehicleBookings.filter((b) => b.status !== "confirmada" && b.status !== "cancelada").length;
+  const confirmadas =
+    bookings.filter((b) => b.status === "confirmada").length +
+    vehicleBookings.filter((b) => b.status === "confirmada").length;
+  const totalInvestido =
+    bookings.reduce((sum, b) => sum + (b.total_price ?? 0), 0) +
+    vehicleBookings.reduce((sum, b) => sum + (b.total_price ?? 0), 0);
 
   return (
     <main className="min-h-screen flex-1 bg-gradient-to-b from-zinc-100/80 via-zinc-50 to-white pb-16">
@@ -150,6 +192,12 @@ export default async function ReservasPage(props: { searchParams: SearchParams }
             className="inline-flex shrink-0 items-center justify-center rounded-xl bg-white px-5 py-2.5 text-sm font-semibold text-[#0A2342] shadow-sm transition hover:bg-sky-50"
           >
             Novo pacote
+          </Link>
+          <Link
+            href="/viaturas"
+            className="inline-flex shrink-0 items-center justify-center rounded-xl border border-white/30 bg-white/10 px-5 py-2.5 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/20"
+          >
+            Reservar viatura
           </Link>
         </div>
 
@@ -184,7 +232,7 @@ export default async function ReservasPage(props: { searchParams: SearchParams }
             </div>
           ) : null}
 
-          {bookings.length === 0 ? (
+          {timeline.length === 0 ? (
             <div className="rounded-3xl border border-zinc-200/80 bg-white p-8 shadow-lg shadow-zinc-900/5 ring-1 ring-zinc-900/5 md:p-12">
               <div className="mx-auto max-w-md text-center">
                 <span className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-[#0A2342] to-[#1D4E89] text-white shadow-md">
@@ -192,21 +240,32 @@ export default async function ReservasPage(props: { searchParams: SearchParams }
                 </span>
                 <h2 className="mt-6 text-xl font-bold text-[#0A2342]">Ainda sem reservas</h2>
                 <p className="mt-2 text-sm leading-relaxed text-zinc-600">
-                  Quando reservar um pacote, ele aparecera aqui com todos os detalhes e opcoes de pagamento.
+                  Quando reservar um pacote ou viatura, aparecera aqui com todos os detalhes e opcoes de pagamento.
                 </p>
-                <Link
-                  href="/pacotes"
-                  className="mt-6 inline-flex items-center justify-center rounded-xl bg-[#0A2342] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#143a6b]"
-                >
-                  Explorar pacotes
-                </Link>
+                <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+                  <Link
+                    href="/pacotes"
+                    className="inline-flex items-center justify-center rounded-xl bg-[#0A2342] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#143a6b]"
+                  >
+                    Explorar pacotes
+                  </Link>
+                  <Link
+                    href="/viaturas"
+                    className="inline-flex items-center justify-center rounded-xl border border-zinc-300 px-6 py-3 text-sm font-semibold text-[#0A2342] transition hover:bg-zinc-50"
+                  >
+                    Reservar viatura
+                  </Link>
+                </div>
               </div>
             </div>
           ) : null}
 
-          {bookings.map((booking, index) => (
+          {timeline.map((entry, index) => {
+            if (entry.kind === "package") {
+              const booking = entry.booking;
+              return (
             <article
-              key={booking.id}
+              key={`pkg-${booking.id}`}
               className="group relative overflow-hidden rounded-2xl border border-zinc-200/90 bg-white shadow-md shadow-zinc-900/5 ring-1 ring-zinc-900/[0.04] transition hover:shadow-lg hover:ring-zinc-900/[0.06]"
             >
               <div className="absolute left-0 top-0 h-full w-1 bg-gradient-to-b from-[#4EA8DE] to-[#0A2342] opacity-90" />
@@ -323,7 +382,122 @@ export default async function ReservasPage(props: { searchParams: SearchParams }
                 </div>
               </div>
             </article>
-          ))}
+              );
+            }
+
+            const vehicle = entry.vehicle;
+            const vehicleModel = vehicleModelFromRow(vehicle);
+            const vehiclePayment = vehicle.status === "confirmada" ? "pago" : "aguardando";
+            const destinationLabel = vehicle.destination?.trim() || "Destino nao informado";
+
+            return (
+            <article
+              key={`veh-${vehicle.id}`}
+              className="group relative overflow-hidden rounded-2xl border border-zinc-200/90 bg-white shadow-md shadow-zinc-900/5 ring-1 ring-zinc-900/[0.04] transition hover:shadow-lg hover:ring-zinc-900/[0.06]"
+            >
+              <div className="absolute left-0 top-0 h-full w-1 bg-gradient-to-b from-zinc-400 to-[#0A2342] opacity-90" />
+              <div className="p-5 pl-6 md:p-6 md:pl-8">
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="inline-flex items-center gap-1 rounded-md bg-zinc-100 px-2 py-0.5 text-[11px] font-mono font-medium text-zinc-600">
+                        #{String(index + 1).padStart(2, "0")}
+                      </span>
+                      <span className="text-[11px] text-zinc-500">
+                        Registada em {formatDatePt(vehicle.created_at)}
+                      </span>
+                    </div>
+                    <h2 className="mt-2 flex items-center gap-2 text-xl font-bold text-[#0A2342]">
+                      <CarFront className="h-5 w-5 shrink-0 text-[color:var(--brand-700)]" aria-hidden />
+                      <span className="truncate">Aluguer · {vehicleModel}</span>
+                    </h2>
+                    <p className="mt-1 flex flex-wrap items-center gap-1.5 text-sm text-zinc-600">
+                      <MapPin className="h-4 w-4 shrink-0 text-[color:var(--brand-700)]" aria-hidden />
+                      {destinationLabel}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span
+                      className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide ring-1 ${statusBookingStyles(vehicle.status)}`}
+                    >
+                      {vehicle.status}
+                    </span>
+                    <span
+                      className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ring-1 ${statusPaymentStyles(vehiclePayment)}`}
+                    >
+                      Pag. {vehiclePayment}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                  <div className="flex gap-3 rounded-xl bg-zinc-50/80 p-3 ring-1 ring-zinc-200/60">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white text-[#0A2342] shadow-sm ring-1 ring-zinc-200/80">
+                      <CalendarDays className="h-5 w-5" aria-hidden />
+                    </span>
+                    <div>
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">Inicio</p>
+                      <p className="text-sm font-semibold text-zinc-900">{formatDatePt(vehicle.start_date)}</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-3 rounded-xl bg-zinc-50/80 p-3 ring-1 ring-zinc-200/60">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white text-[#0A2342] shadow-sm ring-1 ring-zinc-200/80">
+                      <CalendarDays className="h-5 w-5 opacity-80" aria-hidden />
+                    </span>
+                    <div>
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">Fim</p>
+                      <p className="text-sm font-semibold text-zinc-900">{formatDatePt(vehicle.end_date)}</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-3 rounded-xl bg-zinc-50/80 p-3 ring-1 ring-zinc-200/60">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white text-[#0A2342] shadow-sm ring-1 ring-zinc-200/80">
+                      <CalendarDays className="h-5 w-5" aria-hidden />
+                    </span>
+                    <div>
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">Dias</p>
+                      <p className="text-sm font-semibold text-zinc-900">{vehicle.total_days}</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-3 rounded-xl bg-gradient-to-br from-orange-50 to-amber-50/50 p-3 ring-1 ring-orange-200/60">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white text-[#C2410C] shadow-sm ring-1 ring-orange-200/80">
+                      <CircleDollarSign className="h-5 w-5" aria-hidden />
+                    </span>
+                    <div>
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-orange-800/80">Total</p>
+                      <p className="text-lg font-bold text-[#C2410C]">{formatCurrency(vehicle.total_price)}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-5 flex flex-col gap-4 border-t border-zinc-100 pt-5 sm:flex-row sm:items-stretch sm:justify-between">
+                  <div className="flex flex-1 flex-wrap items-end gap-3">
+                    <VehicleBookingReceipt
+                      bookingId={vehicle.id}
+                      vehicleModel={vehicleModel}
+                      destination={destinationLabel}
+                      startDate={vehicle.start_date}
+                      endDate={vehicle.end_date}
+                      totalDays={vehicle.total_days}
+                      totalPrice={vehicle.total_price}
+                      status={vehicle.status}
+                      paymentStatus={vehiclePayment}
+                    />
+                    <VehicleMpesaPayButton
+                      vehicleBookingId={vehicle.id}
+                      disabled={vehicle.status === "confirmada" || vehicle.status === "cancelada"}
+                    />
+                  </div>
+                  <div className="flex flex-col items-end justify-end gap-2 sm:shrink-0">
+                    <span className="inline-flex items-center gap-1.5 rounded-lg bg-zinc-100 px-3 py-2 text-xs text-zinc-600">
+                      <Ticket className="h-3.5 w-3.5" aria-hidden />
+                      ID: {vehicle.id.slice(0, 8)}…
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </article>
+            );
+          })}
         </div>
       </div>
     </main>
