@@ -9,6 +9,13 @@ const nextConfig: NextConfig = {
         // sem `search`: permite `?v=...` para invalidar cache do optimizador
       },
     ],
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "images.unsplash.com",
+        pathname: "/**",
+      },
+    ],
   },
 };
 

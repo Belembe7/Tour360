@@ -22,8 +22,18 @@ export function AtendimentoDashboardRefresh({ intervalMs = 22000 }: Props) {
       router.refresh();
       setLastAt(new Date());
     };
+
+    const onVisible = () => {
+      if (document.visibilityState === "visible") run();
+    };
+
+    run();
+    document.addEventListener("visibilitychange", onVisible);
     const id = window.setInterval(run, intervalMs);
-    return () => window.clearInterval(id);
+    return () => {
+      window.clearInterval(id);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
   }, [router, intervalMs]);
 
   return (

@@ -56,4 +56,3 @@ export async function payVehicleBookingWithMpesa(vehicleBookingId: string) {
 
   return { error: `Pagamento falhou na simulacao. Referencia: ${simulation.reference}` };
 }
-

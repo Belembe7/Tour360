@@ -32,7 +32,11 @@ export type AdminCreateCaixaSchema = z.infer<typeof adminCreateCaixaSchema>;
 export const bookingSchema = z
   .object({
     packageId: z.uuid("Pacote invalido."),
-    destinationId: z.uuid("Selecione um destino valido."),
+    /** Opcional quando o destino vem do catalogo e ainda nao existe na tabela `destinations`. */
+    destinationId: z
+      .union([z.uuid("Destino invalido."), z.literal("")])
+      .optional()
+      .transform((v) => (v && v.length > 0 ? v : undefined)),
     originCity: z.string().min(2, "Informe o local de partida."),
     destinationCity: z.string().min(2, "Informe o destino."),
     travelType: z.enum(["one-way", "round-trip"]),
@@ -62,6 +66,34 @@ export const bookingSchema = z
 
 export type BookingSchema = z.infer<typeof bookingSchema>;
 export type BookingFormValues = z.input<typeof bookingSchema>;
+
+/** Reserva simplificada a partir de um card do catalogo de destinos. */
+export const catalogBookingSchema = z
+  .object({
+    packageId: z.uuid("Pacote invalido."),
+    sectionId: z.enum(["nacional", "africa", "europa", "americas", "asia"]),
+    destinationName: z.string().min(2, "Destino invalido."),
+    fullName: z.string().min(3, "Informe o nome completo."),
+    biNumber: z
+      .string()
+      .min(5, "Informe o Nr de BI.")
+      .max(30, "Nr de BI muito longo."),
+    departureDate: z.string().min(1, "Data de ida obrigatoria."),
+    returnDate: z.string().optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (!data.returnDate?.trim()) return;
+    if (new Date(data.returnDate) < new Date(data.departureDate)) {
+      ctx.addIssue({
+        code: "custom",
+        message: "A data de volta nao pode ser anterior a ida.",
+        path: ["returnDate"],
+      });
+    }
+  });
+
+export type CatalogBookingSchema = z.infer<typeof catalogBookingSchema>;
+export type CatalogBookingFormValues = z.input<typeof catalogBookingSchema>;
 
 export const corporateSchema = z.object({
   fullName: z.string().min(3, "Informe o nome completo."),
@@ -100,35 +132,64 @@ export const staffReservationSchema = z
     destination: z.string().max(500).optional(),
     departureDate: z.string().min(1, "Data de ida obrigatoria."),
     returnDate: z.string().optional(),
-    vehicleType: z.string().max(200).optional(),
+    vehicleId: z.string().optional(),
     numTravelers: z.coerce.number().int().min(1, "Minimo 1 pessoa.").max(99),
     observations: z.string().max(2000).optional(),
-    totalPrice: z.coerce.number().positive("Valor total deve ser positivo."),
+    totalPrice: z.coerce.number().positive("Valor total deve ser positivo.").optional(),
     status: z.enum(["pendente", "confirmada", "cancelada", "concluida"]),
   })
   .superRefine((data, ctx) => {
     if (data.reservationType === "aluguer") {
-      if (!data.vehicleType?.trim()) {
+      if (!data.vehicleId?.trim()) {
         ctx.addIssue({
           code: "custom",
-          message: "Indique o tipo de viatura para aluguer.",
-          path: ["vehicleType"],
+          message: "Selecione a viatura.",
+          path: ["vehicleId"],
         });
       }
-    } else if (!data.destination?.trim()) {
-      ctx.addIssue({
-        code: "custom",
-        message: "Indique o destino para viagem ou pacote.",
-        path: ["destination"],
-      });
-    }
-    if (data.returnDate?.trim() && data.departureDate) {
-      if (new Date(data.returnDate) < new Date(data.departureDate)) {
+      if (!data.destination?.trim()) {
         ctx.addIssue({
           code: "custom",
-          message: "A data de volta nao pode ser anterior a ida.",
+          message: "Informe o destino.",
+          path: ["destination"],
+        });
+      }
+      if (!data.returnDate?.trim()) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Data final obrigatoria.",
           path: ["returnDate"],
         });
+      } else if (data.departureDate && new Date(data.returnDate) < new Date(data.departureDate)) {
+        ctx.addIssue({
+          code: "custom",
+          message: "A data final deve ser igual ou superior a inicial.",
+          path: ["returnDate"],
+        });
+      }
+    } else {
+      if (!data.destination?.trim()) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Indique o destino para viagem ou pacote.",
+          path: ["destination"],
+        });
+      }
+      if (data.totalPrice == null || data.totalPrice <= 0) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Valor total deve ser positivo.",
+          path: ["totalPrice"],
+        });
+      }
+      if (data.returnDate?.trim() && data.departureDate) {
+        if (new Date(data.returnDate) < new Date(data.departureDate)) {
+          ctx.addIssue({
+            code: "custom",
+            message: "A data de volta nao pode ser anterior a ida.",
+            path: ["returnDate"],
+          });
+        }
       }
     }
   });

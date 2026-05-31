@@ -20,9 +20,11 @@ const fieldClass =
 
 type Props = {
   vehicles: Vehicle[];
+  isAuthenticated: boolean;
+  loginHref: string;
 };
 
-export function VehicleBookingForm({ vehicles }: Props) {
+export function VehicleBookingForm({ vehicles, isAuthenticated, loginHref }: Props) {
   const formId = useId();
   const searchParams = useSearchParams();
   const [pending, startTransition] = useTransition();
@@ -121,7 +123,9 @@ export function VehicleBookingForm({ vehicles }: Props) {
         <ol className="mt-2 list-inside list-decimal space-y-1 text-sm text-zinc-700">
           <li>Seleccione a <strong className="font-semibold text-[color:var(--brand-800)]">viatura</strong> e indique o <strong className="font-semibold text-[color:var(--brand-800)]">destino</strong>.</li>
           <li>Defina a <strong className="font-semibold text-[color:var(--brand-800)]">data de inicio e fim</strong> (inclusive). O total e os dias sao calculados automaticamente.</li>
-          <li>Confirme no resumo e submeta — requer <strong className="font-semibold">sessao activa</strong>.</li>
+          <li>
+            Confirme no resumo e submeta — pode pagar com M-Pesa (simulado) e descarregar o comprovativo em PDF.
+          </li>
         </ol>
       </div>
 
@@ -230,19 +234,6 @@ export function VehicleBookingForm({ vehicles }: Props) {
           </p>
         )}
 
-        {!success && (
-          <p className="mt-4 text-xs leading-relaxed text-zinc-600">
-            Para concluir a reserva, inicie{" "}
-            <Link
-              href="/login?next=/viaturas#reservar-viatura"
-              className="font-semibold text-[color:var(--brand-700)] underline underline-offset-2 hover:text-[color:var(--brand-900)]"
-            >
-              sessao
-            </Link>
-            .
-          </p>
-        )}
-
         {success && created ? (
           <div className="mt-5 flex flex-col gap-3 rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4 ring-1 ring-emerald-200/60 md:flex-row md:items-center md:justify-between">
             <div className="min-w-0">
@@ -276,16 +267,35 @@ export function VehicleBookingForm({ vehicles }: Props) {
           </div>
         ) : null}
 
-        <button
-          type="submit"
-          disabled={pending}
-          className={[
-            "ui-btn mt-5 w-full rounded-xl bg-[color:var(--brand-900)] py-3 text-sm font-semibold text-white shadow-sm hover:bg-[color:var(--brand-700)] disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto sm:px-8",
-            pending ? "ui-btn-loading" : "",
-          ].join(" ")}
-        >
-          {pending ? "A confirmar..." : "Confirmar reserva de viatura"}
-        </button>
+        {!isAuthenticated ? (
+          <p className="mt-4 text-xs leading-relaxed text-zinc-600">
+            Para reservar,{" "}
+            <Link href={loginHref} className="font-semibold text-[color:var(--brand-700)] underline underline-offset-2">
+              inicie sessao
+            </Link>
+            .
+          </p>
+        ) : null}
+
+        {isAuthenticated ? (
+          <button
+            type="submit"
+            disabled={pending}
+            className={[
+              "ui-btn mt-5 w-full rounded-xl bg-[color:var(--brand-900)] py-3 text-sm font-semibold text-white shadow-sm hover:bg-[color:var(--brand-700)] disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto sm:px-8",
+              pending ? "ui-btn-loading" : "",
+            ].join(" ")}
+          >
+            {pending ? "A confirmar..." : "Confirmar reserva de viatura"}
+          </button>
+        ) : (
+          <Link
+            href={loginHref}
+            className="ui-btn mt-5 inline-flex w-full items-center justify-center rounded-xl bg-[color:var(--brand-900)] py-3 text-sm font-semibold text-white hover:bg-[color:var(--brand-700)] sm:w-auto sm:px-8"
+          >
+            Iniciar sessao para reservar
+          </Link>
+        )}
       </form>
     </div>
   );

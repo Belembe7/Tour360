@@ -1,10 +1,16 @@
 import Link from "next/link";
 import { NewStaffBookingForm } from "@/components/atendimento/new-staff-booking-form";
+import { createClient } from "@/lib/supabase/server";
+import type { Vehicle } from "@/types";
 
 /**
  * Formulario para criar reserva em nome do cliente (persistencia via server action com validacao de perfil).
  */
-export default function NovaReservaAtendimentoPage() {
+export default async function NovaReservaAtendimentoPage() {
+  const supabase = await createClient();
+  const { data } = await supabase.from("vehicles").select("*").order("price_per_day", { ascending: true });
+  const vehicles = (data ?? []) as Vehicle[];
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -19,7 +25,7 @@ export default function NovaReservaAtendimentoPage() {
           Voltar ao historico
         </Link>
       </div>
-      <NewStaffBookingForm />
+      <NewStaffBookingForm vehicles={vehicles} />
     </div>
   );
 }

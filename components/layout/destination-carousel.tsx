@@ -3,12 +3,13 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useRef } from "react";
+import { buildCatalogReservationHref } from "@/lib/destinations/catalog-booking";
 
 type DestinationOption = {
   title: string;
   subtitle: string;
   imageSrc: string;
-  href: string;
+  catalogName: string;
 };
 
 export function DestinationCarousel() {
@@ -20,37 +21,37 @@ export function DestinationCarousel() {
         title: "Cidade da Beira",
         subtitle: "Arquitectura, praia e vida cultural",
         imageSrc: "/images/dest-beira.png",
-        href: "/pacotes?destino=Cidade%20da%20Beira",
+        catalogName: "Gorongosa",
       },
       {
         title: "Tofo",
         subtitle: "Praia, mergulho e experiencias costeiras",
         imageSrc: "/images/dest-tofo.png",
-        href: "/pacotes?destino=Tofo",
+        catalogName: "Praia do Tofo",
       },
       {
         title: "Vilankulo",
         subtitle: "Bazaruto, dunas e mar turquesa",
         imageSrc: "/images/dest-vilankulo.png",
-        href: "/pacotes?destino=Vilankulo",
+        catalogName: "Vilankulo",
       },
       {
         title: "Ponta do Ouro",
         subtitle: "Escapadinhas, praia e natureza",
         imageSrc: "/images/dest-ponta-do-ouro.png",
-        href: "/pacotes?destino=Ponta%20do%20Ouro",
+        catalogName: "Ponta do Ouro",
       },
       {
         title: "Maputo",
         subtitle: "Cultura urbana, historia e gastronomia",
         imageSrc: "/images/dest-maputo.png",
-        href: "/pacotes?destino=Maputo",
+        catalogName: "Ponta do Ouro",
       },
       {
         title: "Inhambane",
         subtitle: "Patrimonio, praias e tranquilidade",
         imageSrc: "/images/dest-inhambane.png",
-        href: "/pacotes?destino=Inhambane",
+        catalogName: "Praia do Tofo",
       },
     ],
     [],
@@ -73,7 +74,7 @@ export function DestinationCarousel() {
             Explore ideas rapidas — deslize ou clique na seta para ver mais.
           </p>
         </div>
-        <Link href="/pacotes" className="text-sm font-semibold text-cyan-200 hover:underline">
+        <Link href="/pacotes#catalogo-destinos" className="text-sm font-semibold text-cyan-200 hover:underline">
           Ver todos
         </Link>
       </div>
@@ -86,7 +87,7 @@ export function DestinationCarousel() {
           {items.map((item) => (
             <Link
               key={item.title}
-              href={item.href}
+              href={buildCatalogReservationHref("nacional", item.catalogName)}
               data-destination-card
               className="group flex h-[330px] w-[280px] flex-none snap-start flex-col overflow-hidden rounded-2xl border border-zinc-200/80 bg-white shadow-sm ring-1 ring-zinc-900/[0.03] transition hover:-translate-y-1 hover:shadow-lg md:w-[300px]"
             >
@@ -110,7 +111,7 @@ export function DestinationCarousel() {
                 </p>
 
                 <span className="mt-auto inline-flex items-center justify-center gap-2 rounded-lg bg-[color:var(--brand-700)] px-3 py-2.5 text-sm font-semibold text-white transition hover:bg-[color:var(--brand-900)]">
-                  Ver opcoes
+                  Fazer reserva
                   <span aria-hidden>→</span>
                 </span>
               </div>
@@ -122,8 +123,8 @@ export function DestinationCarousel() {
           type="button"
           onClick={scrollNext}
           className="absolute right-0 top-1/2 -translate-y-1/2 rounded-full border border-white/50 bg-white/90 p-3 text-[color:var(--brand-900)] shadow-sm backdrop-blur-sm transition hover:bg-white"
-          aria-label="Ver mais destinos"
-          title="Ver mais destinos"
+          aria-label="Deslizar para ver mais"
+          title="Deslizar para ver mais"
         >
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
             <path
@@ -136,7 +137,15 @@ export function DestinationCarousel() {
           </svg>
         </button>
       </div>
+
+      <div className="mt-8 flex justify-center">
+        <Link
+          href="/pacotes#catalogo-destinos"
+          className="ui-btn inline-flex items-center justify-center rounded-xl bg-[color:var(--brand-700)] px-8 py-3.5 text-sm font-semibold text-white shadow-lg shadow-[color:var(--brand-900)]/25 transition hover:bg-[color:var(--brand-900)]"
+        >
+          Explorar mais destinos
+        </Link>
+      </div>
     </section>
   );
 }
-

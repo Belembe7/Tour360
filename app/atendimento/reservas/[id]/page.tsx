@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { format } from "date-fns";
 import { AtendimentoDataError } from "@/components/atendimento/atendimento-data-error";
+import { DeleteBookingButton } from "@/components/bookings/delete-booking-button";
 import { StaffBookingPdfButton, type StaffBookingPdfPayload } from "@/components/atendimento/staff-booking-pdf-button";
 import { createClient } from "@/lib/supabase/server";
 import { formatCurrency } from "@/lib/utils";
@@ -62,20 +63,14 @@ export default async function AtendimentoReservaDetalhePage({ params }: { params
   if (!booking) notFound();
 
   const b = booking as BookingDetail;
-  if (!b.created_by_user_id) {
-    notFound();
-  }
-  if (isCaixa && b.created_by_user_id !== user.id) {
-    redirect("/atendimento/reservas");
-  }
 
-  const { data: staffProfile } = await supabase
-    .from("profiles")
-    .select("full_name")
-    .eq("id", b.created_by_user_id)
-    .maybeSingle();
+  const { data: staffProfile } = b.created_by_user_id
+    ? await supabase.from("profiles").select("full_name").eq("id", b.created_by_user_id).maybeSingle()
+    : { data: null };
 
-  const staffName = staffProfile?.full_name?.trim() || "Funcionario";
+  const staffName = b.created_by_user_id
+    ? staffProfile?.full_name?.trim() || "Funcionario"
+    : "Reserva online (site)";
   const tipo = (b.reservation_type ?? "pacote") as keyof typeof RESERVATION_TYPE_LABELS;
   const tipoLabel = RESERVATION_TYPE_LABELS[tipo] ?? b.reservation_type;
   const destinoOuViatura =
@@ -108,7 +103,14 @@ export default async function AtendimentoReservaDetalhePage({ params }: { params
         <Link href="/atendimento/reservas" className="text-sm font-semibold text-[#1D4E89] hover:underline">
           Voltar ao historico
         </Link>
-        <StaffBookingPdfButton payload={pdfPayload} />
+        <div className="flex flex-wrap items-center gap-3">
+          <StaffBookingPdfButton payload={pdfPayload} />
+          <DeleteBookingButton
+            bookingId={b.id}
+            label="Apagar reserva"
+            redirectAfterDelete="/atendimento/reservas"
+          />
+        </div>
       </div>
 
       <article className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-lg ring-1 ring-zinc-900/5">

@@ -8,11 +8,13 @@ import {
   Ticket,
   Users,
 } from "lucide-react";
+import { DeleteBookingButton } from "@/components/bookings/delete-booking-button";
 import { BookingReceiptButton } from "@/components/packages/booking-receipt-button";
 import { PageBack } from "@/components/layout/page-back";
 import { MpesaPayButton } from "@/components/payments/mpesa-pay-button";
 import { formatCurrency } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/server";
+import { fetchAllRows } from "@/lib/supabase/fetch-all-rows";
 
 type BookingRow = {
   id: string;
@@ -24,9 +26,20 @@ type BookingRow = {
   status: string;
   payment_status: string;
   notes: string | null;
+  destination_free: string | null;
   packages: { name: string } | null;
   destinations: { name: string } | null;
 };
+
+type SearchParams = Promise<{ reserva?: string }>;
+
+function bookingDestinationLabel(booking: BookingRow): string {
+  return (
+    booking.destinations?.name?.trim() ||
+    booking.destination_free?.trim() ||
+    "Destino nao informado"
+  );
+}
 
 type BookingNotesPayload = {
   passenger?: {
@@ -74,7 +87,10 @@ function statusPaymentStyles(payment: string) {
   return "bg-zinc-100 text-zinc-800 ring-zinc-200/80";
 }
 
-export default async function ReservasPage() {
+export default async function ReservasPage(props: { searchParams: SearchParams }) {
+  const searchParams = await props.searchParams;
+  const justBooked = searchParams.reserva === "ok";
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -84,15 +100,26 @@ export default async function ReservasPage() {
     redirect("/login?next=/reservas");
   }
 
-  const { data } = await supabase
-    .from("bookings")
-    .select(
-      "id, created_at, departure_date, return_date, num_travelers, total_price, status, payment_status, notes, packages(name), destinations(name)",
-    )
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: false });
+  const { data: bookings, error: loadError } = await fetchAllRows<BookingRow>(async (from, to) => {
+    const { data, error } = await supabase
+      .from("bookings")
+      .select(
+        "id, created_at, departure_date, return_date, num_travelers, total_price, status, payment_status, notes, destination_free, packages(name), destinations(name)",
+      )
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .range(from, to);
+    return { data: data as BookingRow[] | null, error };
+  });
 
-  const bookings = (data ?? []) as unknown as BookingRow[];
+  if (loadError) {
+    return (
+      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-10">
+        <PageBack href="/" label="Voltar ao inicio" variant="inverted" className="mb-6" />
+        <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800">Erro ao carregar reservas: {loadError}</p>
+      </main>
+    );
+  }
 
   const total = bookings.length;
   const pendentesPagamento = bookings.filter((b) => b.payment_status !== "pago").length;
@@ -148,6 +175,15 @@ export default async function ReservasPage() {
 
       <div className="mx-auto w-full max-w-5xl px-4 md:px-6">
         <div className="-mt-6 space-y-5 md:-mt-8">
+          {justBooked ? (
+            <div
+              className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900 ring-1 ring-emerald-200/80"
+              role="status"
+            >
+              Reserva confirmada com sucesso. Encontre-a na lista abaixo.
+            </div>
+          ) : null}
+
           {bookings.length === 0 ? (
             <div className="rounded-3xl border border-zinc-200/80 bg-white p-8 shadow-lg shadow-zinc-900/5 ring-1 ring-zinc-900/5 md:p-12">
               <div className="mx-auto max-w-md text-center">
@@ -193,7 +229,7 @@ export default async function ReservasPage() {
                     </h2>
                     <p className="mt-1 flex flex-wrap items-center gap-1.5 text-sm text-zinc-600">
                       <MapPin className="h-4 w-4 shrink-0 text-[color:var(--brand-700)]" aria-hidden />
-                      {booking.destinations?.name ?? "Destino nao informado"}
+                      {bookingDestinationLabel(booking)}
                     </p>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
@@ -263,7 +299,7 @@ export default async function ReservasPage() {
                         <BookingReceiptButton
                           bookingId={booking.id}
                           packageName={booking.packages?.name ?? "Pacote removido"}
-                          destinationName={booking.destinations?.name ?? "Nao informado"}
+                          destinationName={bookingDestinationLabel(booking)}
                           departureDate={booking.departure_date}
                           returnDate={booking.return_date}
                           travelers={booking.num_travelers}
@@ -277,7 +313,8 @@ export default async function ReservasPage() {
                     })()}
                     <MpesaPayButton bookingId={booking.id} disabled={booking.payment_status === "pago"} />
                   </div>
-                  <div className="flex items-center justify-end sm:shrink-0">
+                  <div className="flex flex-col items-end justify-end gap-2 sm:shrink-0">
+                    <DeleteBookingButton bookingId={booking.id} label="Apagar reserva" />
                     <span className="inline-flex items-center gap-1.5 rounded-lg bg-zinc-100 px-3 py-2 text-xs text-zinc-600">
                       <Ticket className="h-3.5 w-3.5" aria-hidden />
                       ID: {booking.id.slice(0, 8)}…

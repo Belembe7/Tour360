@@ -1,4 +1,6 @@
+import { Suspense } from "react";
 import { PackagesDiscovery } from "@/components/packages/packages-discovery";
+import { DestinationsCatalog } from "@/components/destinations/destinations-catalog";
 import { PageBack } from "@/components/layout/page-back";
 import { ScrollReveal } from "@/components/ui/scroll-reveal";
 import { createClient } from "@/lib/supabase/server";
@@ -7,6 +9,7 @@ import type { Package } from "@/types";
 type SearchParams = Promise<{
   type?: "nacional" | "internacional";
   category?: "economico" | "intermediario" | "premium";
+  secao?: string;
 }>;
 
 export default async function PacotesPage(props: { searchParams: SearchParams }) {
@@ -28,9 +31,22 @@ export default async function PacotesPage(props: { searchParams: SearchParams })
   return (
     <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-10">
       <PageBack href="/" label="Voltar ao inicio" className="mb-4" />
+
       <ScrollReveal as="section">
         <PackagesDiscovery items={items} />
       </ScrollReveal>
+
+      <div id="catalogo-destinos" className="ui-section-sep mt-16 scroll-mt-24">
+        <ScrollReveal as="section">
+        <Suspense
+          fallback={
+            <p className="py-12 text-center text-sm text-white/70">A carregar catalogo de destinos...</p>
+          }
+        >
+          <DestinationsCatalog />
+        </Suspense>
+        </ScrollReveal>
+      </div>
     </main>
   );
 }

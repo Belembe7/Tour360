@@ -102,4 +102,3 @@ export function PackagesDiscovery({ items }: Props) {
     </section>
   );
 }
-

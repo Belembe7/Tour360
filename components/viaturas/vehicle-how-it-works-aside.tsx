@@ -21,8 +21,8 @@ const STEPS = [
   },
   {
     step: 3,
-    title: "Confirme com sessao",
-    text: "Inicie sessao para gravar a reserva; depois pode pagar ou ver o estado em Minhas reservas.",
+    title: "Confirme a reserva",
+    text: "Submeta o formulario sem conta; pode pagar com M-Pesa (simulado) e descarregar o comprovativo em PDF.",
     icon: UserRound,
   },
   {
@@ -50,7 +50,7 @@ export function VehicleHowItWorksAside({
         Servicos de viatura em resumo
       </h3>
       <p className="mt-2 text-xs leading-relaxed text-zinc-600">
-        Aluguer por dia com tarifa fixa publicada. O fluxo e simples e fica registado na sua conta.
+        Aluguer por dia com tarifa fixa publicada. Reserve online sem criar conta.
       </p>
       <ol className="mt-5 space-y-3.5">
         {STEPS.map((item) => (

@@ -46,6 +46,8 @@ export async function payBookingWithMpesa(bookingId: string) {
 
   revalidatePath("/reservas");
   revalidatePath("/admin/reservas");
+  revalidatePath("/atendimento");
+  revalidatePath("/atendimento/reservas");
 
   if (simulation.status === "confirmado") {
     return { success: `Pagamento confirmado. Referencia: ${simulation.reference}` };

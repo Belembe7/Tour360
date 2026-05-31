@@ -173,7 +173,11 @@ export default async function ViaturasPage() {
               </div>
             }
           >
-            <VehicleBookingForm vehicles={vehicles} />
+            <VehicleBookingForm
+              vehicles={vehicles}
+              isAuthenticated={Boolean(user)}
+              loginHref={`/login?next=${encodeURIComponent("/viaturas#reservar-viatura")}`}
+            />
           </Suspense>
         </div>
     </main>

@@ -1,11 +1,12 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { bookingSchema } from "@/lib/validations";
 import { createClient } from "@/lib/supabase/server";
 
 type CreateBookingInput = {
   packageId: string;
-  destinationId: string;
+  destinationId?: string;
   originCity: string;
   destinationCity: string;
   travelType: "one-way" | "round-trip";
@@ -57,13 +58,15 @@ export async function createBooking(input: CreateBookingInput) {
     .from("bookings")
     .insert({
       user_id: user.id,
+      reservation_type: "pacote",
       package_id: parsed.data.packageId,
-      destination_id: parsed.data.destinationId,
+      destination_id: parsed.data.destinationId ?? null,
       travel_type: parsed.data.travelType,
       departure_date: parsed.data.departureDate,
       return_date: parsed.data.travelType === "round-trip" ? parsed.data.returnDate : null,
       num_travelers: parsed.data.numTravelers,
       total_price: input.totalPrice,
+      client_name: parsed.data.fullName.trim(),
       notes: JSON.stringify(structuredNotes),
     })
     .select("id")
@@ -72,6 +75,11 @@ export async function createBooking(input: CreateBookingInput) {
   if (error) {
     return { error: error.message };
   }
+
+  revalidatePath("/reservas");
+  revalidatePath("/perfil");
+  revalidatePath("/atendimento");
+  revalidatePath("/atendimento/reservas");
 
   return { success: true as const, bookingId: inserted.id as string };
 }

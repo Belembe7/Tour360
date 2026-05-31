@@ -1,7 +1,9 @@
 import { redirect } from "next/navigation";
 import { AdminNav } from "@/components/admin/admin-nav";
+import { DeleteBookingButton } from "@/components/bookings/delete-booking-button";
 import { BookingStatusActions } from "@/components/admin/booking-status-actions";
 import { createClient } from "@/lib/supabase/server";
+import { fetchAllRows } from "@/lib/supabase/fetch-all-rows";
 import { formatCurrency } from "@/lib/utils";
 
 type BookingRow = {
@@ -30,19 +32,28 @@ export default async function AdminReservasPage() {
     .single();
   if (profile?.role !== "admin") redirect("/perfil");
 
-  const { data } = await supabase
-    .from("bookings")
-    .select(
-      "id, departure_date, num_travelers, total_price, status, payment_status, client_name, packages(name), profiles(full_name)",
-    )
-    .order("created_at", { ascending: false });
-
-  const bookings = (data ?? []) as unknown as BookingRow[];
+  const { data: bookings, error: loadError } = await fetchAllRows<BookingRow>(async (from, to) => {
+    const { data, error } = await supabase
+      .from("bookings")
+      .select(
+        "id, departure_date, num_travelers, total_price, status, payment_status, client_name, packages(name), profiles(full_name)",
+      )
+      .order("created_at", { ascending: false })
+      .range(from, to);
+    return { data: data as BookingRow[] | null, error };
+  });
 
   return (
     <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-10">
       <h1 className="mb-2 text-3xl font-bold text-[#0A2342]">Gestao de reservas</h1>
-      <p className="mb-6 text-zinc-600">Confirme, cancele e monitore pagamentos.</p>
+      <p className="mb-6 text-zinc-600">
+        Confirme, cancele e monitore pagamentos.{" "}
+        {loadError ? (
+          <span className="text-red-600">Erro ao carregar: {loadError}</span>
+        ) : (
+          <span className="font-medium">{bookings.length} reservas listadas.</span>
+        )}
+      </p>
       <AdminNav />
       <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white shadow-sm">
         <table className="min-w-full text-left text-sm">
@@ -71,7 +82,10 @@ export default async function AdminReservasPage() {
                 <td className="px-4 py-3">{booking.status}</td>
                 <td className="px-4 py-3">{booking.payment_status}</td>
                 <td className="px-4 py-3">
-                  <BookingStatusActions bookingId={booking.id} />
+                  <div className="flex flex-col gap-2">
+                    <BookingStatusActions bookingId={booking.id} />
+                    <DeleteBookingButton bookingId={booking.id} />
+                  </div>
                 </td>
               </tr>
             ))}

@@ -60,7 +60,7 @@ export function PackageCard({ item }: { item: Package }) {
           href={`/pacotes/${item.slug}`}
           className="ui-btn mt-4 inline-flex w-full items-center justify-center rounded-lg bg-[color:var(--brand-700)] px-3 py-2.5 text-sm font-semibold text-white hover:bg-[color:var(--brand-900)]"
         >
-          Ver pacote
+          Fazer reserva
         </Link>
       </div>
     </article>

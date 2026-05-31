@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { connection } from "next/server";
 import { addMonths, eachDayOfInterval, endOfMonth, format, parse, startOfDay, startOfMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { CarFront, Luggage, MapPin } from "lucide-react";
@@ -19,7 +20,12 @@ type StaffBookingRow = {
   destination_free: string | null;
   total_price: number;
   status: string;
+  created_by_user_id: string | null;
 };
+
+function originLabel(b: StaffBookingRow): string {
+  return b.created_by_user_id ? "Balcao" : "Site";
+}
 
 function parseMonthKey(mes: string | undefined): Date {
   const key = mes && /^\d{4}-\d{2}$/.test(mes) ? mes : format(new Date(), "yyyy-MM");
@@ -71,6 +77,9 @@ function typeLabel(t: string) {
   return RESERVATION_TYPE_LABELS[k] ?? t;
 }
 
+/** Dados sempre frescos (polling no cliente via router.refresh). */
+export const dynamic = "force-dynamic";
+
 /**
  * Painel do balcao: reservas registadas em nome do cliente (viagem, pacote, viatura), alinhado ao resto do site.
  */
@@ -79,6 +88,8 @@ export default async function AtendimentoDashboardPage({
 }: {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
+  await connection();
+
   const sp = (await searchParams) ?? {};
   const { fromIso, toIso, label, mesNav } = resolveRange(sp);
 
@@ -88,22 +99,15 @@ export default async function AtendimentoDashboardPage({
   } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
-  const role = profile?.role ?? "client";
-  const scopeOwnOnly = role === "caixa";
+  const bookingSelect =
+    "id, created_at, reservation_type, client_name, destination_free, total_price, status, created_by_user_id";
 
-  let base = supabase
+  const { data: rows, error: queryError } = await supabase
     .from("bookings")
-    .select("id, created_at, reservation_type, client_name, destination_free, total_price, status")
-    .not("created_by_user_id", "is", null)
+    .select(bookingSelect)
     .gte("created_at", fromIso)
-    .lte("created_at", toIso);
-
-  if (scopeOwnOnly) {
-    base = base.eq("created_by_user_id", user.id);
-  }
-
-  const { data: rows, error: queryError } = await base.order("created_at", { ascending: false });
+    .lte("created_at", toIso)
+    .order("created_at", { ascending: false });
 
   if (queryError) {
     return <AtendimentoDataError error={queryError.message} />;
@@ -288,7 +292,7 @@ export default async function AtendimentoDashboardPage({
               <div>
                 <h3 className="text-sm font-bold text-[#0A2342]">Ultimas reservas no periodo</h3>
                 <p className="mt-1 text-xs text-zinc-500">
-                  Lista ordenada pela data de criacao; actualiza ao navegar ou automaticamente em baixo.
+                  Site e balcao no periodo seleccionado; actualiza automaticamente em baixo.
                 </p>
               </div>
               <div className="flex shrink-0 flex-col items-start gap-2 sm:items-end">
@@ -313,7 +317,7 @@ export default async function AtendimentoDashboardPage({
                     <div>
                       <p className="font-semibold text-zinc-900">{b.client_name ?? "Cliente"}</p>
                       <p className="text-xs text-zinc-500">
-                        {typeLabel(b.reservation_type)}
+                        {originLabel(b)} · {typeLabel(b.reservation_type)}
                         {b.destination_free?.trim() ? ` · ${b.destination_free.trim()}` : ""} ·{" "}
                         {format(new Date(b.created_at), "dd/MM/yyyy HH:mm")}
                       </p>

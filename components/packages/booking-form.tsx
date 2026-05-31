@@ -1,15 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useId, useMemo, useState, useTransition } from "react";
+import { useEffect, useId, useMemo, useRef, useState, useTransition } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CalendarRange, FileText, MapPin, UserRound, IdCard, Briefcase } from "lucide-react";
 import { createBooking } from "@/app/pacotes/[slug]/actions";
 import { downloadPackageBookingReceiptPdf } from "@/lib/pdf/package-booking-receipt";
 import { formatCurrency } from "@/lib/utils";
+import {
+  getCatalogDestinationCities,
+  MOZAMBIQUE_ORIGIN_CITIES,
+  type DestinationCatalogSectionId,
+} from "@/lib/destinations/catalog-booking";
 import { bookingSchema, type BookingFormValues } from "@/lib/validations";
-import type { Destination } from "@/types";
+import type { Destination, Package } from "@/types";
 
 const fieldClass =
   "ui-field w-full rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-sm text-zinc-800 outline-none " +
@@ -45,15 +50,54 @@ type Props = {
   packageId: string;
   packageSlug: string;
   packageName: string;
+  packageType: Package["type"];
   basePrice: number;
   destinations: Destination[];
+  initialDestinationCity?: string;
+  catalogSection?: DestinationCatalogSectionId;
+  isAuthenticated: boolean;
+  loginHref: string;
 };
 
-export function BookingForm({ packageId, packageSlug, packageName, basePrice, destinations }: Props) {
+export function BookingForm({
+  packageId,
+  packageSlug,
+  packageName,
+  packageType,
+  basePrice,
+  destinations,
+  initialDestinationCity,
+  catalogSection,
+  isAuthenticated,
+  loginHref,
+}: Props) {
   const formId = useId();
   const [pending, startTransition] = useTransition();
   const [serverMessage, setServerMessage] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const didScrollToForm = useRef(false);
+
+  const originCities = useMemo(() => {
+    const seeded = destinations
+      .filter((d) => d.is_national)
+      .map((d) => d.name)
+      .filter((name) => !name.includes(" - "));
+    return Array.from(new Set([...MOZAMBIQUE_ORIGIN_CITIES, ...seeded])).sort((a, b) =>
+      a.localeCompare(b, "pt"),
+    );
+  }, [destinations]);
+
+  const destinationCities = useMemo(
+    () => getCatalogDestinationCities(packageType, catalogSection ?? null),
+    [packageType, catalogSection],
+  );
+
+  const defaultDestinationCity = useMemo(() => {
+    if (initialDestinationCity && destinationCities.includes(initialDestinationCity)) {
+      return initialDestinationCity;
+    }
+    return destinationCities[0] ?? "Maputo";
+  }, [initialDestinationCity, destinationCities]);
 
   const {
     register,
@@ -66,9 +110,9 @@ export function BookingForm({ packageId, packageSlug, packageName, basePrice, de
     resolver: zodResolver(bookingSchema),
     defaultValues: {
       packageId,
-      destinationId: destinations[0]?.id ?? "",
+      destinationId: "",
       originCity: "Beira",
-      destinationCity: "Maputo",
+      destinationCity: defaultDestinationCity,
       travelType: "one-way",
       departureDate: "",
       returnDate: "",
@@ -93,15 +137,20 @@ export function BookingForm({ packageId, packageSlug, packageName, basePrice, de
     return basePrice * travelers * multiplier;
   }, [basePrice, isRoundTrip, numTravelers]);
 
-  const nationalCities = useMemo(() => {
-    const fallback = ["Beira", "Maputo", "Nampula", "Lichinga", "Vilankulo"];
-    const seeded = destinations
-      .filter((d) => d.is_national)
-      .map((d) => d.name)
-      .filter((name) => !name.includes(" - "));
-    const unique = Array.from(new Set([...fallback, ...seeded]));
-    return unique.sort((a, b) => a.localeCompare(b, "pt"));
-  }, [destinations]);
+  useEffect(() => {
+    if (initialDestinationCity && destinationCities.includes(initialDestinationCity)) {
+      setValue("destinationCity", initialDestinationCity, { shouldValidate: true });
+    }
+  }, [initialDestinationCity, destinationCities, setValue]);
+
+  useEffect(() => {
+    if (didScrollToForm.current) return;
+    if (typeof window === "undefined") return;
+    if (window.location.hash !== "#reservar") return;
+    didScrollToForm.current = true;
+    const el = document.getElementById("reservar");
+    el?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, []);
 
   const routeNameToId = useMemo(() => {
     const map = new Map<string, string>();
@@ -135,7 +184,12 @@ export function BookingForm({ packageId, packageSlug, packageName, basePrice, de
     setSuccess(false);
 
     startTransition(async () => {
-      const destinationId = routeNameToId.get(`${values.originCity} - ${values.destinationCity}`) ?? values.destinationId;
+      const routeKey = `${values.originCity} - ${values.destinationCity}`;
+      const destinationId =
+        routeNameToId.get(routeKey) ??
+        routeNameToId.get(values.destinationCity) ??
+        values.destinationId ??
+        undefined;
       const parsed = bookingSchema.safeParse({ ...values, packageId, destinationId });
       if (!parsed.success) {
         setServerMessage(parsed.error.issues[0]?.message ?? "Dados invalidos.");
@@ -175,9 +229,9 @@ export function BookingForm({ packageId, packageSlug, packageName, basePrice, de
       setServerMessage("Reserva criada com sucesso. O comprovativo em PDF foi descarregado.");
       reset({
         packageId,
-        destinationId: destinations[0]?.id ?? "",
+        destinationId: "",
         originCity: "Beira",
-        destinationCity: "Maputo",
+        destinationCity: defaultDestinationCity,
         travelType: "one-way",
         departureDate: "",
         returnDate: "",
@@ -191,21 +245,21 @@ export function BookingForm({ packageId, packageSlug, packageName, basePrice, de
     });
   }
 
-  if (destinations.length === 0) {
+  if (destinationCities.length === 0) {
     return (
       <div
         className="mt-6 rounded-xl border border-[color:var(--brand-500)]/25 bg-[color:var(--brand-50)] p-4 ring-1 ring-[color:var(--brand-500)]/10"
         role="alert"
       >
         <p className="text-sm text-[color:var(--brand-900)]">
-          Ainda nao ha destinos cadastrados. Adicione destinos na base de dados para activar o formulario de reserva.
+          Nao ha destinos disponiveis para este tipo de pacote. Volte ao catalogo em Pacotes.
         </p>
       </div>
     );
   }
 
   return (
-    <div className="mt-8">
+    <div id="reservar" className="mt-8 scroll-mt-24">
       <div className="mb-5 rounded-2xl border border-[color:var(--brand-500)]/20 bg-gradient-to-br from-[color:var(--brand-50)] to-white p-4 ring-1 ring-[color:var(--brand-500)]/10 md:p-5">
         <h2 className="text-base font-bold text-[color:var(--brand-900)]">Como preencher</h2>
         <ol className="mt-2 list-inside list-decimal space-y-1.5 text-sm leading-relaxed text-zinc-700">
@@ -229,7 +283,10 @@ export function BookingForm({ packageId, packageSlug, packageName, basePrice, de
 
       <form
         onSubmit={handleSubmit(onSubmit)}
-        className="ui-surface-lift space-y-6 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm ring-1 ring-zinc-900/5 md:p-6"
+        className={[
+          "ui-surface-lift space-y-6 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm ring-1 ring-zinc-900/5 md:p-6",
+          !isAuthenticated ? "opacity-75" : "",
+        ].join(" ")}
         aria-label="Dados da reserva"
         id={formId}
       >
@@ -252,7 +309,7 @@ export function BookingForm({ packageId, packageSlug, packageName, basePrice, de
                 De onde esta a sair (ex.: Beira).
               </p>
               <select id={`${formId}-from`} className={fieldClass} aria-describedby={`${formId}-from-hint`} {...register("originCity")}>
-                {nationalCities.map((city) => (
+                {originCities.map((city) => (
                   <option key={city} value={city}>
                     {city}
                   </option>
@@ -266,16 +323,16 @@ export function BookingForm({ packageId, packageSlug, packageName, basePrice, de
                 Destino <span className="text-red-600">*</span>
               </label>
               <p className="text-xs text-zinc-500" id={`${formId}-to-hint`}>
-                Para onde vai (ex.: Maputo).
+                {packageType === "nacional"
+                  ? "Escolha um destino nacional do catalogo TOUR 360."
+                  : "Escolha o destino internacional pretendido."}
               </p>
               <select id={`${formId}-to`} className={fieldClass} aria-describedby={`${formId}-to-hint`} {...register("destinationCity")}>
-                {nationalCities
-                  .filter((c) => c !== originCity)
-                  .map((city) => (
-                    <option key={city} value={city}>
-                      {city}
-                    </option>
-                  ))}
+                {destinationCities.map((city) => (
+                  <option key={city} value={city}>
+                    {city}
+                  </option>
+                ))}
               </select>
               {errors.destinationCity && <p className="text-xs text-red-600">{errors.destinationCity.message}</p>}
             </div>
@@ -475,8 +532,20 @@ export function BookingForm({ packageId, packageSlug, packageName, basePrice, de
               {formatCurrency(totalPrice)}
             </span>
           </p>
-          <p className="mt-1 text-xs text-zinc-500">Valor indicativo; confirmacao e pagamento em Minhas reservas.</p>
+          <p className="mt-1 text-xs text-zinc-500">
+            Valor indicativo; a equipa confirmara os detalhes apos receber a reserva.
+          </p>
         </div>
+
+        {!isAuthenticated ? (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+            Para fazer a reserva, precisa de{" "}
+            <Link href={loginHref} className="font-semibold text-[color:var(--brand-800)] underline underline-offset-2">
+              iniciar sessao
+            </Link>
+            . Depois do login volta automaticamente a este formulario.
+          </div>
+        ) : null}
 
         {serverMessage && (
           <p
@@ -487,29 +556,25 @@ export function BookingForm({ packageId, packageSlug, packageName, basePrice, de
           </p>
         )}
 
-        {!success && (
-          <p className="text-xs leading-relaxed text-zinc-600">
-            Para concluir a reserva com a sua conta, inicie{" "}
-            <Link
-              href={`/login?next=/pacotes/${packageSlug}`}
-              className="font-semibold text-[color:var(--brand-700)] underline underline-offset-2 hover:text-[color:var(--brand-900)]"
-            >
-              sessao (login)
-            </Link>{" "}
-            antes de confirmar.
-          </p>
+        {isAuthenticated ? (
+          <button
+            type="submit"
+            disabled={pending}
+            className={[
+              "ui-btn w-full rounded-xl bg-[color:var(--brand-900)] px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-[color:var(--brand-700)] disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto",
+              pending ? "ui-btn-loading" : "",
+            ].join(" ")}
+          >
+            {pending ? "A confirmar..." : "Confirmar reserva"}
+          </button>
+        ) : (
+          <Link
+            href={loginHref}
+            className="ui-btn inline-flex w-full items-center justify-center rounded-xl bg-[color:var(--brand-900)] px-4 py-3 text-sm font-semibold text-white hover:bg-[color:var(--brand-700)] sm:w-auto"
+          >
+            Iniciar sessao para reservar
+          </Link>
         )}
-
-        <button
-          type="submit"
-          disabled={pending}
-          className={[
-            "ui-btn w-full rounded-xl bg-[color:var(--brand-900)] px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-[color:var(--brand-700)] disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto",
-            pending ? "ui-btn-loading" : "",
-          ].join(" ")}
-        >
-          {pending ? "A confirmar..." : "Confirmar reserva"}
-        </button>
       </form>
     </div>
   );
