@@ -1,5 +1,6 @@
 "use server";
 
+import { authCallbackUrl } from "@/lib/auth/app-url";
 import { isReservedForClientSelfRegistration } from "@/lib/auth/reserved-client-emails";
 import { registerSchema } from "@/lib/validations";
 import { createClient } from "@/lib/supabase/server";
@@ -33,19 +34,12 @@ export async function registerClientUser(input: {
   }
 
   const supabase = await createClient();
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL;
-  const base =
-    appUrl && appUrl.startsWith("http")
-      ? appUrl
-      : process.env.VERCEL_URL
-        ? `https://${process.env.VERCEL_URL}`
-        : "http://localhost:3000";
 
   const { data, error } = await supabase.auth.signUp({
     email,
     password: parsed.data.password,
     options: {
-      emailRedirectTo: `${base}/auth/callback?next=${encodeURIComponent("/perfil")}`,
+      emailRedirectTo: authCallbackUrl("/perfil"),
       data: {
         full_name: parsed.data.fullName.trim(),
       },

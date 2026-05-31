@@ -7,6 +7,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createClient } from "@/lib/supabase/client";
+import { authCallbackUrl, getAppBaseUrlClient } from "@/lib/auth/app-url";
 import { loginSchema, type LoginSchema } from "@/lib/validations";
 
 type LoginFormProps = {
@@ -29,15 +30,10 @@ export function LoginForm({ variant = "client", defaultNext = "/perfil" }: Login
   const [pendingEmail, setPendingEmail] = useState("");
   const nextPath = params.get("next") || defaultNext;
   const oauthError = params.get("error") === "oauth_callback_failed";
+  const authCallbackError = params.get("error") === "auth_callback";
+  const authMessage = params.get("message");
   const registeredStatus = params.get("registered");
   const registeredEmail = params.get("email");
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL;
-
-  function getBaseUrl() {
-    if (appUrl && appUrl.startsWith("http")) return appUrl;
-    if (typeof window !== "undefined") return window.location.origin;
-    return "http://localhost:3000";
-  }
 
   const {
     register,
@@ -119,7 +115,7 @@ export function LoginForm({ variant = "client", defaultNext = "/perfil" }: Login
       type: "signup",
       email,
       options: {
-        emailRedirectTo: `${getBaseUrl()}/auth/callback?next=${encodeURIComponent(nextPath)}`,
+        emailRedirectTo: authCallbackUrl(nextPath.startsWith("/") ? nextPath : "/perfil"),
       },
     });
 
@@ -150,7 +146,7 @@ export function LoginForm({ variant = "client", defaultNext = "/perfil" }: Login
     setResetLoading(true);
     const supabase = createClient();
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${getBaseUrl()}/login`,
+      redirectTo: `${getAppBaseUrlClient()}/login`,
     });
     setResetLoading(false);
 
@@ -250,6 +246,12 @@ export function LoginForm({ variant = "client", defaultNext = "/perfil" }: Login
         ) : null}
         {oauthError && !serverError ? (
           <p className="text-sm text-red-600">Falha ao concluir o login com Google. Tente novamente.</p>
+        ) : null}
+        {authCallbackError && !serverError ? (
+          <p className="text-sm text-red-600">
+            {authMessage?.trim() ||
+              "Nao foi possivel confirmar o email. O link pode ter expirado — use Reenviar email de confirmacao."}
+          </p>
         ) : null}
         {infoMessage && <p className="text-sm text-amber-800">{infoMessage}</p>}
         {infoMessage && pendingEmail ? (

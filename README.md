@@ -47,4 +47,15 @@ Configure no painel da Vercel (Project → Settings → Environment Variables):
 
 Use o ficheiro `.env.local.example` como referencia.
 
+#### Supabase — confirmacao de email (importante)
+
+No painel [Supabase](https://supabase.com/dashboard) → **Authentication** → **URL Configuration**:
+
+1. **Site URL:** `https://tour360-cyan.vercel.app` (nao use `http://localhost:3000` em producao)
+2. **Redirect URLs** — adicione todas:
+   - `https://tour360-cyan.vercel.app/**`
+   - `http://localhost:3000/**` (apenas para desenvolvimento local)
+
+Sem isto, o link do email de confirmacao abre `localhost` no telemovel e da erro `ERR_CONNECTION_REFUSED`.
+
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.

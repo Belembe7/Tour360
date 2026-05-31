@@ -10,6 +10,7 @@ import { registerClientUser } from "@/app/register/actions";
 import { isReservedForClientSelfRegistration } from "@/lib/auth/reserved-client-emails";
 import { registerSchema, type RegisterSchema } from "@/lib/validations";
 import { AuthCardShell, GoogleIcon } from "@/components/auth/auth-card-shell";
+import { authCallbackUrl, getAppBaseUrlClient } from "@/lib/auth/app-url";
 
 const inputFilled =
   "ui-field w-full rounded-2xl border-0 bg-zinc-100 px-4 py-3.5 text-sm text-zinc-900 placeholder:text-zinc-400 outline-none " +
@@ -28,13 +29,6 @@ export function RegisterForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [cooldownSeconds, setCooldownSeconds] = useState(0);
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL;
-
-  function getBaseUrl() {
-    if (appUrl && appUrl.startsWith("http")) return appUrl;
-    if (typeof window !== "undefined") return window.location.origin;
-    return "http://localhost:3000";
-  }
 
   const {
     register,
@@ -108,7 +102,7 @@ export function RegisterForm() {
     setSuccessMessage(null);
     setOauthLoading(true);
     const supabase = createClient();
-    const redirectTo = `${getBaseUrl()}/auth/callback?next=${encodeURIComponent("/perfil")}`;
+    const redirectTo = authCallbackUrl("/perfil");
 
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
